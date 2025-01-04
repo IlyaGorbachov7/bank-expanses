@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox alignment="CENTER" prefHeight="500.0" prefWidth="700.0" spacing="20.0" xmlns="http://javafx.com/javafx/22" xmlns:fx="http://javafx.com/fxml/1" fx:controller="gorbachev.id.appexpensesbank.HelloController">
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+    </padding>
+   <children>
+      <AnchorPane prefHeight="200.0" prefWidth="200.0">
+         <children>
+            <DatePicker fx:id="dateFrom" layoutX="389.0" layoutY="48.0" prefHeight="25.0" prefWidth="115.0" />
+            <Button fx:id="btnLoadFile" layoutX="196.0" layoutY="48.0" lineSpacing="120.0" mnemonicParsing="false" text="Загрузить файл" />
+            <Label layoutX="338.0" layoutY="52.0" text="Периуд с" />
+            <Label layoutX="504.0" layoutY="52.0" text="Периуд до" />
+            <DatePicker fx:id="dateTo" layoutX="563.0" layoutY="48.0" prefHeight="25.0" prefWidth="115.0" />
+            <ComboBox fx:id="bankBox" layoutX="14.0" layoutY="48.0" prefWidth="150.0" promptText="Банк" />
+         </children>
+      </AnchorPane>
+      <LineChart fx:id="chartLine">
+        <xAxis>
+          <CategoryAxis side="BOTTOM" />
+        </xAxis>
+        <yAxis>
+          <NumberAxis side="LEFT" />
+        </yAxis>
+      </LineChart>
+      <AnchorPane prefHeight="200.0" prefWidth="200.0">
+         <children>
+            <ComboBox fx:id="ditalizationBox" layoutX="546.0" prefHeight="25.0" prefWidth="132.0" promptText="Датлизация" />
+            <Button fx:id="generate" layoutX="522.0" layoutY="37.0" mnemonicParsing="false" text="Формировать диограмму" />
+         </children>
+      </AnchorPane>
+   </children>
+</VBox>

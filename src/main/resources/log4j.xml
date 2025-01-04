@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <Properties>
+        <Property name="PATH_LOGS">${sys:PATH_LOGS}</Property>
+        <Property name="PATTERN_APPENDER">%-5p %c - %m%n</Property>
+        <Property name="PATTERN_APPENDER_FILE">%d{HH:mm:ss.SSS} %-5p %c - %m%n</Property>
+    </Properties>
+    <Appenders>
+        <Console name="ConsoleAppender">
+            <PatternLayout pattern="${PATTERN_APPENDER}"/>
+        </Console>
+        <RollingFile name="FileAppender" append="false">
+            <FileName>${PATH_LOGS}/${date:yyyy-MM-dd}/expenses-app-${date:yyyy-MM-dd-HH}.log</FileName>
+            <FilePattern>${PATH_LOGS}/%d{yyyy-MM-dd}/expenses-app-${date:yyyy-MM-dd-HH}.log</FilePattern>
+            <PatternLayout pattern="${PATTERN_APPENDER_FILE}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+        </RollingFile>
+        <RollingFile name="TriggerOnDeleteLogFiles">
+            <FileName>${PATH_LOGS}/${date:yyyy-MM-dd}/trigger-on-delete-logfile.log</FileName>
+            <FilePattern>${PATH_LOGS}/%d{yyyy-MM-dd}/trigger-on-delete-logfile-%i.log</FilePattern> <!-- Здесь нужно обязательно добавить %i? чтобы сробатывал DefaultRolloverStrategy-->
+            <Policies>
+                <SizeBasedTriggeringPolicy size="7KB"/> <!--Когда достигнет 1MB то срабатывает DefaultRolloverStrategy, который в совю очередь смотрит какоие файлы удалять -->
+            </Policies>
+            <DefaultRolloverStrategy min="1" max="1"><!--Удаление срабатывает только когда созданны файл filePattern содержит %i-->
+                <Delete basePath="${PATH_LOGS}/${date:yyyy-MM-dd}" maxDepth="3">
+                    <IfLastModified age="2h"/> <!--Каждые 2 часов будут удалятся файлы из папки по дню, где ${date:yyyy-MM-dd} - это день запуска -->
+                </Delete>
+                <Delete basePath="${PATH_LOGS}" maxDepth="2">
+                    <IfLastModified age="2d"/> <!--Спустя 2д будет полностью очищаться папка корнивая папка лога-->
+                </Delete>
+                <Delete basePath="${PATH_LOGS}" maxDepth="1">
+                    <IfLastModified age="2d"/> <!--Спустя 2д будет полностью очищаться папка корнивая папка лога-->
+                </Delete>
+            </DefaultRolloverStrategy>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="warn">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="FileAppender"/>
+        </Root>
+        <Logger name="gorbachev.id.expenses" level="info"  additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="TriggerOnDeleteLogFiles"/>
+        </Logger>
+        <Logger name="gorbachev.id.appexpensesbank.Bootstrap" level="debug" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="TriggerOnDeleteLogFiles"/>
+        </Logger>
+
+
+        <!-- Test folders-->
+        <Logger name="ru.koreanika.basic.img_parse_materials" level="info" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="TriggerOnDeleteLogFiles"/>
+        </Logger>
+
+
+    </Loggers>
+</Configuration>
