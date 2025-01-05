@@ -1,7 +1,9 @@
 package gorbachev.id.appexpensesbank;
 
-import gorbachev.id.core.ParserHtml;
-import gorbachev.id.core.model.ResultParser;
+import gorbachev.id.core.ParserExpensesBank;
+import gorbachev.id.core.ResultParser;
+import gorbachev.id.core.bank.parsers.BelGosPromBankParser;
+import gorbachev.id.core.model.ParamParser;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -12,9 +14,7 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
-import javafx.util.Callback;
 import lombok.extern.slf4j.Slf4j;
-import gorbachev.id.core.BankStatement;
 import gorbachev.id.core.DitailStatment;
 
 import java.io.File;
@@ -28,7 +28,7 @@ public class HelloController implements Initializable {
     public DatePicker dateFrom;
     public Button btnLoadFile;
     public DatePicker dateTo;
-    public ComboBox<BankStatement> bankBox;
+    public ComboBox<String> bankBox;
     public LineChart<Double, String> chartLine;
     public ComboBox<DitailStatment> ditalizationBox;
     public Button generate;
@@ -56,7 +56,7 @@ public class HelloController implements Initializable {
         });
 
 
-        bankBox.setSelectionModel(new SingleSelectionModel<BankStatement>() {
+      /*  bankBox.setSelectionModel(new SingleSelectionModel<BankStatement>() {
             @Override
             protected BankStatement getModelItem(int i) {
                 return Stream.of(BankStatement.values()).toList().get(i);
@@ -72,7 +72,7 @@ public class HelloController implements Initializable {
             public ListCell<BankStatement> call(ListView<BankStatement> bankStatementListView) {
                 return null;
             }
-        });
+        });*/
         bankBox.setButtonCell(new ListCell<>());
 
 
@@ -81,7 +81,7 @@ public class HelloController implements Initializable {
             public void changed(ObservableValue<? extends EventHandler<? super MouseEvent>> observableValue, EventHandler<? super MouseEvent> eventHandler, EventHandler<? super MouseEvent> t1) {
                 if(fileBankStatement.get() != null) {
 
-                    resultParser = ParserHtml.parserHtml(fileBankStatement.get(), bankBox.getSelectionModel().getSelectedItem());
+                    resultParser = ParserExpensesBank.parse(new ParamParser(null, null, null, null), new BelGosPromBankParser());
                     log.info("Parser is complied");
 
                 }else {

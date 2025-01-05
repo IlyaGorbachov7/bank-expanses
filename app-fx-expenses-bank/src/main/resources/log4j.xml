@@ -38,20 +38,20 @@
     </Appenders>
 
     <Loggers>
-        <Root level="info">
+        <Root level="warn">
             <AppenderRef ref="ConsoleAppender"/>
             <AppenderRef ref="FileAppender"/>
         </Root>
-        <Logger name="gorbachev.id" level="info"  additivity="false">
-            <AppenderRef ref="ConsoleAppender"/>
-            <AppenderRef ref="FileAppender"/>
-            <AppenderRef ref="TriggerOnDeleteLogFiles"/>
-        </Logger>
-        <Logger name="gorbachev.id" level="debug" additivity="false">
+        <Logger name="gorbachev.id.core" level="info"  additivity="false">
             <AppenderRef ref="ConsoleAppender"/>
             <AppenderRef ref="FileAppender"/>
             <AppenderRef ref="TriggerOnDeleteLogFiles"/>
         </Logger>
 
+        <Logger name="gorbachev.id.appexpensesbank" level="info"  additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="FileAppender"/>
+            <AppenderRef ref="TriggerOnDeleteLogFiles"/>
+        </Logger>
     </Loggers>
 </Configuration>

@@ -3,11 +3,12 @@ package gorbachev.id.parent;
 import java.nio.file.Path;
 
 public class BootstrapParent {
-    public static void main(String[] args) {
-//        Application.launch(HelloApplication.class, args);
-        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BootstrapParent.class);
-        log.error("FFFFFFFFFFF");
-        System.out.println(Path.of("").toAbsolutePath());
-        System.out.println(BootstrapParent.class.getResource("/log4j.xml"));
+    public static final String SYS_KEY_PATH_LOGS = "PATH_LOGS";
+
+    public static void configure(String[] args) {
+        if(System.getProperty(SYS_KEY_PATH_LOGS) == null) {
+            System.setProperty(SYS_KEY_PATH_LOGS, Path.of(System.getProperty("user.home"),"expenses-app").toString());
+            System.out.println("SYS_KEY_PATH_LOGS : "+System.getProperty(SYS_KEY_PATH_LOGS));
+        }
     }
 }

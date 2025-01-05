@@ -1,9 +1,10 @@
 package gorbachev.id.core;
 
 import gorbachev.id.core.model.ParamParser;
-import gorbachev.id.core.model.ResultParser;
+
+import java.io.IOException;
 
 public interface BankParser {
 
-    ResultParser parse(ParamParser params);
+    ResultParser parse(ParamParser params) throws IOException;
 }

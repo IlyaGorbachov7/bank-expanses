@@ -19,18 +19,6 @@
         <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
-    <!--<dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>5.11.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
--->
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -101,6 +89,16 @@
                 <plugin>
                     <artifactId>maven-project-info-reports-plugin</artifactId>
                     <version>3.6.1</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.4.0</version>
+                    <configuration>
+                        <descriptors>
+                            <descriptor>src/assembly/descriptor.xml</descriptor>
+                        </descriptors>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
