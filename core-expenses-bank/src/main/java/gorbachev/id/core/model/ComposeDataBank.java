@@ -10,6 +10,7 @@ import java.util.Map;
 
 @AllArgsConstructor
 @Getter
+@ToString
 public class ComposeDataBank {
 
     private DitailStatment detail;
