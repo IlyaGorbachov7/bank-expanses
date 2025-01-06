@@ -4,10 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import gorbachev.id.core.BankParser;
 import gorbachev.id.core.DitailStatment;
-import gorbachev.id.core.ParserExpensesBank;
 import gorbachev.id.core.ResultParser;
 import gorbachev.id.core.bank.parsers.BelGosPromBankParser;
-import gorbachev.id.core.bank.parsers.BelarusBankParser;
 import gorbachev.id.core.model.ItemRecordCost;
 import gorbachev.id.core.model.ParamParser;
 import gorbachev.id.parent.BootstrapParent;
@@ -21,11 +19,9 @@ import java.math.RoundingMode;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.function.ToDoubleFunction;
 
 /**
  * Unit test for simple App.

@@ -1,6 +1,6 @@
 package gorbachev.id.appexpensesbank;
 
-import gorbachev.id.core.ParserExpensesBank;
+import gorbachev.id.core.ManagerExpensesBank;
 import gorbachev.id.core.ResultParser;
 import gorbachev.id.core.bank.parsers.BelGosPromBankParser;
 import gorbachev.id.core.model.ParamParser;
@@ -18,9 +18,9 @@ import lombok.extern.slf4j.Slf4j;
 import gorbachev.id.core.DitailStatment;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
-import java.util.stream.Stream;
 
 @Slf4j
 public class HelloController implements Initializable {
@@ -81,7 +81,11 @@ public class HelloController implements Initializable {
             public void changed(ObservableValue<? extends EventHandler<? super MouseEvent>> observableValue, EventHandler<? super MouseEvent> eventHandler, EventHandler<? super MouseEvent> t1) {
                 if(fileBankStatement.get() != null) {
 
-                    resultParser = ParserExpensesBank.parse(new ParamParser(null, null, null, null), new BelGosPromBankParser());
+                    try {
+                        resultParser = ManagerExpensesBank.parse(new ParamParser(null, null, null, null), new BelGosPromBankParser());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     log.info("Parser is complied");
 
                 }else {
