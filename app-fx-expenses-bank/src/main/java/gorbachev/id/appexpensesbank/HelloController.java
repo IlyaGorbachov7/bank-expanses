@@ -119,7 +119,7 @@ public class HelloController implements Initializable {
                 try {
 
                     ParamParser paramParser = new ParamParser(Path.of(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource("report (3).html")).toURI()).toFile(),
-                            dateFrom.getValue(), dateTo.getValue(), DitailStatment.DAY);
+                            dateFrom.getValue(), dateTo.getValue(), DitailStatment.HOURS);
                     if (Objects.isNull(resultParser)) {
                         resultParser = ManagerExpensesBank.parse(paramParser, new BelGosPromBankParser());
                     }
@@ -223,9 +223,35 @@ public class HelloController implements Initializable {
             }, null);
         } else if (composeData.getDetail() == DitailStatment.HOURS) {
             xA.setLabel("часы");
-            manager.callbackOnForEach(composeData, null, null, null, (summarizedItemCost) -> {
+            manager.callbackOnForEach(composeData,
+                    (yearKey) -> {
+                        composeChart.setYearStateTmp((Integer) yearKey);
+                    }, (monthKey) -> {
+                        composeChart.setMonthStateTmp((Integer) monthKey);
+                    }, (dayKey) -> {
+                        XYChart.Series<String, Number> series;
+                        String xD = serilsNameToDisplayString(composeData.getDetail(), ((Integer) dayKey), composeChart.getMonthStateTmp(), composeChart.getYearStateTmp());
 
-            });
+                        if (composeChart.getSeries().peekLast() == null) {
+                            series = new XYChart.Series<>();
+                            series.setName(xD);
+                            composeChart.getSeries().add(series);
+                        } else {
+                            series = composeChart.getSeries().getLast();
+                            if (!series.getName().equals(xD)) {
+                                series = new XYChart.Series<>();
+                                series.setName(xD);
+                                composeChart.getSeries().add(series);
+                            }
+                        }
+
+                    }, (obj) -> {
+                        SummarizedItemCost summarizedItemCost = (SummarizedItemCost) obj;
+                        XYChart.Series<String, Number> series = composeChart.getSeries().getLast();
+                        String xD = uniqueCodeToDisplayString(composeData.getDetail(), summarizedItemCost.getUniqueCode());
+                        Number yD = summarizedItemCost.getSumExpensesCost();
+                        series.getData().add(new XYChart.Data<>(xD, yD));
+                    });
         }
         LineChart<String, Number> lineChart = composeChart.compose();
         if (lineChart == null) {
