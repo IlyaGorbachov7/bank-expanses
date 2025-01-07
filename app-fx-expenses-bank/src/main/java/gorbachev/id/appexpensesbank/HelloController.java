@@ -1,5 +1,6 @@
 package gorbachev.id.appexpensesbank;
 
+import gorbachev.id.core.ExpensesBankInfo;
 import gorbachev.id.core.ManagerExpensesBank;
 import gorbachev.id.core.ResultParser;
 import gorbachev.id.core.bank.parsers.BelGosPromBankParser;
@@ -9,18 +10,25 @@ import gorbachev.id.core.model.SummarizedItemCost;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.ComboBoxListCell;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import gorbachev.id.core.DitailStatment;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import javafx.util.Callback;
+import javafx.util.StringConverter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -43,11 +51,12 @@ public class HelloController implements Initializable {
     public DatePicker dateFrom;
     public Button btnLoadFile;
     public DatePicker dateTo;
-    public ComboBox<String> bankBox;
+    public ComboBox<ExpensesBankInfo> bankBox;
     public BorderPane borderPaneDiagram;
     public ScrollPane scrollPane;
     public ComboBox<DitailStatment> ditalizationBox;
     public Button generate;
+    public Button settings;
 
     private SimpleObjectProperty<File> fileBankStatement;
 
@@ -75,63 +84,75 @@ public class HelloController implements Initializable {
         });
         btnLoadFile.setOnAction(actionEvent -> {
             log.debug("click on select file: ");
-            fileBankStatement.set(getFromFileChooser(bankBox.getScene()));
+            fileBankStatement.set(getFromFileChooser(bankBox.getScene(), "html", "*.html"));
         });
 
 
-      /*  bankBox.setSelectionModel(new SingleSelectionModel<BankStatement>() {
+//        bankBox.setItems(FXCollections.observableList(getSupportedBank()));
+        ditalizationBox.setItems(FXCollections.observableList(Arrays.stream(DitailStatment.values()).toList()));
+        ditalizationBox.getSelectionModel().select(DitailStatment.YEAR);
+        ditalizationBox.setButtonCell(new ComboBoxListCell<>(new StringConverter<DitailStatment>() {
             @Override
-            protected BankStatement getModelItem(int i) {
-                return Stream.of(BankStatement.values()).toList().get(i);
+            public String toString(DitailStatment ditailStatment) {
+                return ditailStatment.getViewName();
             }
 
             @Override
-            protected int getItemCount() {
-                return (int) Stream.of(BankStatement.values()).count();
+            public DitailStatment fromString(String s) {
+                return Arrays.stream(DitailStatment.values()).filter((ditail) -> ditail.getViewName().equals(s)).findFirst().get();
             }
-        });
-        bankBox.setCellFactory(new Callback<ListView<BankStatement>, ListCell<BankStatement>>() {
-            @Override
-            public ListCell<BankStatement> call(ListView<BankStatement> bankStatementListView) {
-                return null;
-            }
-        });*/
-        bankBox.setButtonCell(new ListCell<>());
-        ditalizationBox.setSelectionModel(new SingleSelectionModel<DitailStatment>() {
-            List<DitailStatment> detail = Arrays.stream(DitailStatment.values()).toList();
+        }));
 
-            @Override
-            protected DitailStatment getModelItem(int i) {
-                return detail.get(i);
-            }
-
-            @Override
-            protected int getItemCount() {
-                return detail.size();
-            }
-        });
-
-
-        generate.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
+        settings.addEventHandler(MouseEvent.MOUSE_CLICKED, new EventHandler<MouseEvent>() {
             @Override
             public void handle(MouseEvent mouseEvent) {
-
-                try {
-
-                    ParamParser paramParser = new ParamParser(Path.of(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource("report (3).html")).toURI()).toFile(),
-                            dateFrom.getValue(), dateTo.getValue(), DitailStatment.HOURS);
-                    if (Objects.isNull(resultParser)) {
-                        resultParser = ManagerExpensesBank.parse(paramParser, new BelGosPromBankParser());
+                FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("settings-view.fxml"));
+                fxmlLoader.setControllerFactory(new Callback<Class<?>, Object>() {
+                    @Override
+                    public Object call(Class<?> aClass) {
+                        return new SettingsController(HelloController.this);
                     }
-                    ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
-                    compseDeagram(composeData);
-                } catch (IOException | URISyntaxException e) {
+                });
+                try {
+                    Scene scene = new Scene(fxmlLoader.load(), 500, 400);
+                    Stage stage = new Stage();
+                    stage.setScene(scene);
+                    stage.initModality(Modality.WINDOW_MODAL);
+                    stage.initOwner(settings.getScene().getWindow());
+
+                    stage.setTitle("Настройки");
+                    stage.showAndWait();
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-//                log.info("Parser is complied");
             }
         });
 
+        generate.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
+
+            try {
+
+                ParamParser paramParser = new ParamParser(Path.of(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource("report (3).html")).toURI()).toFile(),
+                        dateFrom.getValue(), dateTo.getValue(), ditalizationBox.getSelectionModel().getSelectedItem());
+                if (Objects.isNull(resultParser)) {
+                    resultParser = ManagerExpensesBank.parse(paramParser, new BelGosPromBankParser());
+                }
+                ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
+                compseDeagram(composeData);
+            } catch (IOException | URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+//                log.info("Parser is complied");
+        });
+
+    }
+
+    private List<ExpensesBankInfo> getSupportedBank() {
+        List<ExpensesBankInfo> result = new ArrayList<>();
+        ServiceLoader<ExpensesBankInfo> bankInfoServiceLoader = ServiceLoader.load(ExpensesBankInfo.class);
+        bankInfoServiceLoader.forEach(result::add);
+
+        return null;
     }
 
     private void compseDeagram(ComposeDataBank composeData) {
@@ -308,6 +329,15 @@ public class HelloController implements Initializable {
 
     }
 
+    public void updateBankComBoBox(Path jarFile, List<ExpensesBankInfo> expensesBankInfo) throws IOException {
+        List<Path> jars = Bootstrap.getPathJarBankInfoFromFile();
+        if (jars.contains(jarFile)) { // is added
+            bankBox.getItems().addAll(expensesBankInfo);
+        } else { // is remoted
+            bankBox.getItems().removeAll(expensesBankInfo);
+        }
+    }
+
     @Setter
     @Getter
     @NoArgsConstructor
@@ -359,7 +389,7 @@ public class HelloController implements Initializable {
                 double scaleFactor = (deltaY > 0) ? 1.1 : 0.9;
                 if (event.isControlDown()) {
                     lineChart.prefWidthProperty().unbind();
-                    lineChart.setPrefWidth(lineChart.getPrefWidth() + (deltaY > 0 ? 100 : -100));
+                    lineChart.setPrefWidth(lineChart.getPrefWidth() + (deltaY > 0 ? 200 : -200));
                 } else {
                     lineChart.setScaleX(lineChart.getScaleX() * scaleFactor);
                     lineChart.setScaleY(lineChart.getScaleY() * scaleFactor);
@@ -386,10 +416,10 @@ public class HelloController implements Initializable {
     }
 
 
-    public static File getFromFileChooser(Scene scene) {
+    public static File getFromFileChooser(Scene scene, String s, String... extension) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select Some Files");
-        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("html", "*.html"));
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(s, extension));
 
         return fileChooser.showOpenDialog(scene.getWindow());
     }

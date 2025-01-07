@@ -1,8 +1,25 @@
 package gorbachev.id.core;
 
 public enum DitailStatment {
-    YEAR,
-    MONTH,
-    DAY,
-    HOURS;
+    YEAR("Годом"),
+    MONTH("Месяцам"),
+    DAY("Дням"),
+    HOURS("Часам");
+
+    private String viewName;
+
+    DitailStatment(String viewName) {
+        this.viewName = viewName;
+    }
+
+    public String getViewName() {
+        return viewName;
+    }
+
+    @Override
+    public String toString() {
+        return viewName;
+    }
+
+
 }

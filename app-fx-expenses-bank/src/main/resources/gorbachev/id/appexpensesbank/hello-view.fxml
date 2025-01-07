@@ -6,6 +6,8 @@
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.VBox?>
@@ -22,11 +24,20 @@
                   <AnchorPane prefHeight="89.0" prefWidth="678.0">
                      <children>
                         <DatePicker fx:id="dateFrom" layoutX="389.0" layoutY="48.0" prefHeight="25.0" prefWidth="115.0" />
-                        <Button fx:id="btnLoadFile" layoutX="196.0" layoutY="48.0" lineSpacing="120.0" mnemonicParsing="false" text="Загрузить файл" />
+                        <Button fx:id="btnLoadFile" layoutX="230.0" layoutY="48.0" lineSpacing="120.0" mnemonicParsing="false" text="Загрузить файл" />
                         <Label layoutX="338.0" layoutY="52.0" text="Периуд с" />
                         <Label layoutX="504.0" layoutY="52.0" text="Периуд до" />
                         <DatePicker fx:id="dateTo" layoutX="563.0" layoutY="48.0" prefHeight="25.0" prefWidth="115.0" />
                         <ComboBox fx:id="bankBox" layoutX="14.0" layoutY="48.0" prefWidth="150.0" promptText="Банк" />
+                        <Button fx:id="settings" contentDisplay="GRAPHIC_ONLY" layoutX="164.0" layoutY="48.0" mnemonicParsing="false">
+                           <graphic>
+                              <ImageView fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">
+                                 <image>
+                                    <Image url="@settings.png" />
+                                 </image>
+                              </ImageView>
+                           </graphic>
+                        </Button>
                      </children>
                   </AnchorPane>
                   <AnchorPane>
