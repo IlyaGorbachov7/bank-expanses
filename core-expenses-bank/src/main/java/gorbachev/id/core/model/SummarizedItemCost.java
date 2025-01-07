@@ -11,6 +11,10 @@ import java.util.List;
 @AllArgsConstructor
 @ToString
 public class SummarizedItemCost {
+    String uniqueCode;
+
+    Integer parentKey;
+
     List<ItemRecordCost> expensesCostByDetail;
 
     Double sumExpensesCost;

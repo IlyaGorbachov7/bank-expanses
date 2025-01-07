@@ -12,7 +12,10 @@ public class SimpleDateTest {
 
     @Test
     public void test1() {
-        String date = "13.12.2024";
-        System.out.println(LocalDate.parse(date));
+        m();
+    }
+
+    static void m(Integer ... d) {
+        System.out.println(d.length);
     }
 }
