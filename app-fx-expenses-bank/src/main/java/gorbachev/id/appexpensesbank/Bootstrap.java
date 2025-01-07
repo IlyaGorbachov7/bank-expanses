@@ -56,7 +56,7 @@ public class Bootstrap {
         return Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).toList();
     }
 
-    public static List<ExpensesBankInfo> getExpensesBankInfoFrom(Path jarFile) throws MalformedURLException {
+    public static List<ExpensesBankInfo> extractExpensesBankInfoFrom(Path jarFile) throws MalformedURLException {
         URLClassLoader foreignLoader = URLClassLoader.newInstance(new URL[]{jarFile.toFile().toURI().toURL()}, Bootstrap.class.getClassLoader());
         ServiceLoader<ExpensesBankInfo> expensesBankInfos = ServiceLoader.load(ExpensesBankInfo.class, foreignLoader);
         List<ExpensesBankInfo> result = new ArrayList<>();

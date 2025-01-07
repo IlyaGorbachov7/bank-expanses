@@ -19,10 +19,15 @@ import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.ComboBoxListCell;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import gorbachev.id.core.DitailStatment;
 import javafx.stage.Modality;
@@ -87,8 +92,83 @@ public class HelloController implements Initializable {
             fileBankStatement.set(getFromFileChooser(bankBox.getScene(), "html", "*.html"));
         });
 
+        bankBox.setItems(FXCollections.observableList(getSupportedBank()));
+        if (bankBox.getItems().size() > 0) {
+            bankBox.getSelectionModel().select(0);
+        }
+        bankBox.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(ExpensesBankInfo expensesBankInfo, boolean empty) {
+                super.updateItem(expensesBankInfo, empty);
+                if (!empty) {
+                    setGraphic(buildCell(expensesBankInfo));
+                } else {
+                    setGraphic(null);
+                }
+            }
 
-//        bankBox.setItems(FXCollections.observableList(getSupportedBank()));
+            private Node buildCell(ExpensesBankInfo expensesBankInfo) {
+                HBox rootHBox = new HBox();
+                rootHBox.setStyle("""
+                           -fx-min-height: 20px;
+                           -fx-pref-height: 20px;
+                           -fx-spacing: 4px;
+                           -fx-alignment: center;
+                        """);
+                Image image = new Image(expensesBankInfo.getBankIcon());
+                ImageView imageView = new ImageView(image);
+                imageView.setFitHeight(20d);
+                imageView.setFitWidth(20d);
+                rootHBox.getChildren().add(imageView);
+                Label label = new Label(expensesBankInfo.getBankName());
+                label.setStyle("""
+                        -fx-fill: red;
+                        -fx-text-fill: black;
+                        """);
+                rootHBox.getChildren().add(label);
+                return rootHBox;
+            }
+        });
+        bankBox.setCellFactory(new Callback<ListView<ExpensesBankInfo>, ListCell<ExpensesBankInfo>>() {
+            @Override
+            public ListCell<ExpensesBankInfo> call(ListView<ExpensesBankInfo> expensesBankInfoListView) {
+                return new ListCell<>() {
+                    @Override
+                    protected void updateItem(ExpensesBankInfo expensesBankInfo, boolean empty) {
+                        super.updateItem(expensesBankInfo, empty);
+                        if (!empty) {
+                            setGraphic(buildCell(expensesBankInfo));
+                        } else {
+                            setGraphic(null);
+                        }
+                    }
+                };
+            }
+
+            private Node buildCell(ExpensesBankInfo expensesBankInfo) {
+                HBox rootHBox = new HBox();
+                rootHBox.setStyle("""
+                           -fx-border-width: 1.5;
+                           -fx-border-color: black;
+                           -fx-padding: 1px;
+                           -fx-min-height: 25px;
+                           -fx-pref-height: 25px;
+                           -fx-spacing: 4px;
+                           -fx-alignment: center;
+                        """);
+                Image image = new Image(expensesBankInfo.getBankIcon());
+                ImageView imageView = new ImageView(image);
+                imageView.setFitHeight(20d);
+                imageView.setFitWidth(20d);
+                rootHBox.getChildren().add(imageView);
+
+                TextFlow textFlow = new TextFlow();
+                textFlow.getChildren().add(new Text(expensesBankInfo.getBankName()));
+                rootHBox.getChildren().add(textFlow);
+                return rootHBox;
+            }
+        });
+
         ditalizationBox.setItems(FXCollections.observableList(Arrays.stream(DitailStatment.values()).toList()));
         ditalizationBox.getSelectionModel().select(DitailStatment.YEAR);
         ditalizationBox.setButtonCell(new ComboBoxListCell<>(new StringConverter<DitailStatment>() {
@@ -131,14 +211,17 @@ public class HelloController implements Initializable {
         generate.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
 
             try {
-
-                ParamParser paramParser = new ParamParser(Path.of(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource("report (3).html")).toURI()).toFile(),
-                        dateFrom.getValue(), dateTo.getValue(), ditalizationBox.getSelectionModel().getSelectedItem());
-                if (Objects.isNull(resultParser)) {
-                    resultParser = ManagerExpensesBank.parse(paramParser, new BelGosPromBankParser());
+                if (bankBox.getSelectionModel().getSelectedItem() != null) {
+                    ParamParser paramParser = new ParamParser(Path.of(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource("report (3).html")).toURI()).toFile(),
+                            dateFrom.getValue(), dateTo.getValue(), ditalizationBox.getSelectionModel().getSelectedItem());
+                    if (Objects.isNull(resultParser)) {
+                        resultParser = ManagerExpensesBank.parse(paramParser, bankBox.getSelectionModel().getSelectedItem().parser());
+                    }
+                    ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
+                    compseDeagram(composeData);
+                }else {
+                    System.out.println("не выбран банк");
                 }
-                ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
-                compseDeagram(composeData);
             } catch (IOException | URISyntaxException e) {
                 throw new RuntimeException(e);
             }
@@ -148,11 +231,21 @@ public class HelloController implements Initializable {
     }
 
     private List<ExpensesBankInfo> getSupportedBank() {
+        // reading from core
         List<ExpensesBankInfo> result = new ArrayList<>();
         ServiceLoader<ExpensesBankInfo> bankInfoServiceLoader = ServiceLoader.load(ExpensesBankInfo.class);
         bankInfoServiceLoader.forEach(result::add);
 
-        return null;
+        try {
+            // reading jar files
+            List<Path> jars = Bootstrap.getPathJarBankInfoFromFile();
+            for (Path jar : jars) {
+                result.addAll(Bootstrap.extractExpensesBankInfoFrom(jar));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     private void compseDeagram(ComposeDataBank composeData) {

@@ -44,7 +44,7 @@ public class ManagerBankSettingsController implements Initializable {
                     if (change.wasAdded()) {
                         try {
                             for (Path jarFile : change.getAddedSubList()) {
-                                List<ExpensesBankInfo> listExpensesBankInfo = Bootstrap.getExpensesBankInfoFrom(jarFile);
+                                List<ExpensesBankInfo> listExpensesBankInfo = Bootstrap.extractExpensesBankInfoFrom(jarFile);
                                 rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
                             }
                         } catch (IOException e) {
@@ -53,7 +53,7 @@ public class ManagerBankSettingsController implements Initializable {
                     } else if (change.wasRemoved()) {
                         try {
                             for (Path jarFile : change.getAddedSubList()) {
-                                List<ExpensesBankInfo> listExpensesBankInfo = Bootstrap.getExpensesBankInfoFrom(jarFile);
+                                List<ExpensesBankInfo> listExpensesBankInfo = Bootstrap.extractExpensesBankInfoFrom(jarFile);
                                 rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
                             }
                         } catch (IOException e) {
