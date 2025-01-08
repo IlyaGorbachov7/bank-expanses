@@ -1,10 +1,10 @@
 package gorbachev.id.appexpensesbank;
 
+import by.gorbachevid.perse.util.NotAccessToFileException;
 import gorbachev.id.core.ExpensesBankInfo;
 import gorbachev.id.parent.BootstrapParent;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -31,24 +31,33 @@ public class Bootstrap {
         filePathJarBankInfo = Path.of(pathApp.toAbsolutePath().toString(), fileNameManagerBank);
     }
 
-    public static void addPathToJarBankInfo(Path path) throws IOException {
+    public static void addPathToJarBankInfo(Path path) throws NotAccessToFileException {
+        try {
         if (!Files.exists(path)) {
             throw new IOException("jar file: " + path + " not founded");
         }
         if (!Files.exists(filePathJarBankInfo)) {
             Files.createFile(filePathJarBankInfo);
         }
-        List<Path> pathsToJar = Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).toList();
+        List<Path> pathsToJar = Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).collect(Collectors.toList());
         if (!pathsToJar.contains(path)) {
+            pathsToJar.add(path);
             Files.write(filePathJarBankInfo, pathsToJar.stream().map(Path::toString).toList());
+        }
+        }catch (IOException e) {
+            throw new NotAccessToFileException(e.getMessage(), e, path);
         }
     }
 
-    public static void removePathToJarBankInfo(Path path) throws IOException {
-        if (Files.exists(filePathJarBankInfo)) {
-            List<Path> pathsToJar = new java.util.ArrayList<>((Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).collect(Collectors.toSet())));
-            pathsToJar.remove(path);
-            Files.write(filePathJarBankInfo, pathsToJar.stream().map(Path::toString).toList());
+    public static void removePathToJarBankInfo(Path path) throws NotAccessToFileException {
+        try {
+            if (Files.exists(filePathJarBankInfo)) {
+                List<Path> pathsToJar = new java.util.ArrayList<>((Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).collect(Collectors.toSet())));
+                pathsToJar.remove(path);
+                Files.write(filePathJarBankInfo, pathsToJar.stream().map(Path::toString).toList());
+            }
+        }catch (IOException e) {
+            throw new NotAccessToFileException(e.getMessage(), e, path);
         }
     }
 
@@ -56,11 +65,13 @@ public class Bootstrap {
         return Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).toList();
     }
 
-    public static List<ExpensesBankInfo> extractExpensesBankInfoFrom(Path jarFile) throws MalformedURLException {
-        URLClassLoader foreignLoader = URLClassLoader.newInstance(new URL[]{jarFile.toFile().toURI().toURL()}, Bootstrap.class.getClassLoader());
-        ServiceLoader<ExpensesBankInfo> expensesBankInfos = ServiceLoader.load(ExpensesBankInfo.class, foreignLoader);
+    public static List<ExpensesBankInfo> extractExpensesBankInfoFrom(Path jarFile) throws IOException {
+        URLClassLoader foreignLoader = URLClassLoader.newInstance(new URL[]{jarFile.toFile().toURI().toURL()});
         List<ExpensesBankInfo> result = new ArrayList<>();
-        expensesBankInfos.forEach(result::add);
+        ServiceLoader<ExpensesBankInfo> expensesBankInfos = ServiceLoader.load(ExpensesBankInfo.class, foreignLoader);
+        expensesBankInfos.stream()
+                .filter(provider -> provider.type().getClassLoader() == foreignLoader)
+                .forEach((provider) -> result.add(provider.get()));
         return result;
     }
 }

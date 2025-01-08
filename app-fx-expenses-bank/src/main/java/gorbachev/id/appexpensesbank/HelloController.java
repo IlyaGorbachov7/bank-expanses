@@ -1,9 +1,9 @@
 package gorbachev.id.appexpensesbank;
 
+import by.gorbachevid.perse.util.FilesUtil;
 import gorbachev.id.core.ExpensesBankInfo;
 import gorbachev.id.core.ManagerExpensesBank;
 import gorbachev.id.core.ResultParser;
-import gorbachev.id.core.bank.parsers.BelGosPromBankParser;
 import gorbachev.id.core.model.ComposeDataBank;
 import gorbachev.id.core.model.ParamParser;
 import gorbachev.id.core.model.SummarizedItemCost;
@@ -34,6 +34,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -50,13 +51,14 @@ import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class HelloController implements Initializable {
 
     public DatePicker dateFrom;
     public Button btnLoadFile;
     public DatePicker dateTo;
-    public ComboBox<ExpensesBankInfo> bankBox;
+    public ComboBox<WrapExpensesBankInfo> bankBox;
     public BorderPane borderPaneDiagram;
     public ScrollPane scrollPane;
     public ComboBox<DitailStatment> ditalizationBox;
@@ -98,10 +100,10 @@ public class HelloController implements Initializable {
         }
         bankBox.setButtonCell(new ListCell<>() {
             @Override
-            protected void updateItem(ExpensesBankInfo expensesBankInfo, boolean empty) {
+            protected void updateItem(WrapExpensesBankInfo expensesBankInfo, boolean empty) {
                 super.updateItem(expensesBankInfo, empty);
                 if (!empty) {
-                    setGraphic(buildCell(expensesBankInfo));
+                    setGraphic(buildCell(expensesBankInfo.instanse));
                 } else {
                     setGraphic(null);
                 }
@@ -129,12 +131,12 @@ public class HelloController implements Initializable {
                 return rootHBox;
             }
         });
-        bankBox.setCellFactory(new Callback<ListView<ExpensesBankInfo>, ListCell<ExpensesBankInfo>>() {
+        bankBox.setCellFactory(new Callback<ListView<WrapExpensesBankInfo>, ListCell<WrapExpensesBankInfo>>() {
             @Override
-            public ListCell<ExpensesBankInfo> call(ListView<ExpensesBankInfo> expensesBankInfoListView) {
+            public ListCell<WrapExpensesBankInfo> call(ListView<WrapExpensesBankInfo> expensesBankInfoListView) {
                 return new ListCell<>() {
                     @Override
-                    protected void updateItem(ExpensesBankInfo expensesBankInfo, boolean empty) {
+                    protected void updateItem(WrapExpensesBankInfo expensesBankInfo, boolean empty) {
                         super.updateItem(expensesBankInfo, empty);
                         if (!empty) {
                             setGraphic(buildCell(expensesBankInfo));
@@ -145,7 +147,7 @@ public class HelloController implements Initializable {
                 };
             }
 
-            private Node buildCell(ExpensesBankInfo expensesBankInfo) {
+            private Node buildCell(WrapExpensesBankInfo expensesBankInfo) {
                 HBox rootHBox = new HBox();
                 rootHBox.setStyle("""
                            -fx-border-width: 1.5;
@@ -156,14 +158,14 @@ public class HelloController implements Initializable {
                            -fx-spacing: 4px;
                            -fx-alignment: center;
                         """);
-                Image image = new Image(expensesBankInfo.getBankIcon());
+                Image image = new Image(expensesBankInfo.instanse.getBankIcon());
                 ImageView imageView = new ImageView(image);
                 imageView.setFitHeight(20d);
                 imageView.setFitWidth(20d);
                 rootHBox.getChildren().add(imageView);
 
                 TextFlow textFlow = new TextFlow();
-                textFlow.getChildren().add(new Text(expensesBankInfo.getBankName()));
+                textFlow.getChildren().add(new Text(expensesBankInfo.instanse.getBankName()));
                 rootHBox.getChildren().add(textFlow);
                 return rootHBox;
             }
@@ -215,11 +217,11 @@ public class HelloController implements Initializable {
                     ParamParser paramParser = new ParamParser(Path.of(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource("report (3).html")).toURI()).toFile(),
                             dateFrom.getValue(), dateTo.getValue(), ditalizationBox.getSelectionModel().getSelectedItem());
                     if (Objects.isNull(resultParser)) {
-                        resultParser = ManagerExpensesBank.parse(paramParser, bankBox.getSelectionModel().getSelectedItem().parser());
+                        resultParser = ManagerExpensesBank.parse(paramParser, bankBox.getSelectionModel().getSelectedItem().instanse.parser());
                     }
                     ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
                     compseDeagram(composeData);
-                }else {
+                } else {
                     System.out.println("не выбран банк");
                 }
             } catch (IOException | URISyntaxException e) {
@@ -230,7 +232,11 @@ public class HelloController implements Initializable {
 
     }
 
-    private List<ExpensesBankInfo> getSupportedBank() {
+    /**
+     * Use Set because elements should be unique in bankBox. Now every time you will be added new item in {@link #bankBox}
+     * then method {@link WrapExpensesBankInfo#equals(Object)} will be checking uniqueness
+     */
+    private List<WrapExpensesBankInfo> getSupportedBank() {
         // reading from core
         List<ExpensesBankInfo> result = new ArrayList<>();
         ServiceLoader<ExpensesBankInfo> bankInfoServiceLoader = ServiceLoader.load(ExpensesBankInfo.class);
@@ -245,7 +251,9 @@ public class HelloController implements Initializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return result;
+        return result.stream().map(WrapExpensesBankInfo::new)
+                .distinct() // unique elements next
+                .collect(Collectors.toList());
     }
 
     private void compseDeagram(ComposeDataBank composeData) {
@@ -422,12 +430,41 @@ public class HelloController implements Initializable {
 
     }
 
-    public void updateBankComBoBox(Path jarFile, List<ExpensesBankInfo> expensesBankInfo) throws IOException {
+    public void updateBankComBoBox(Path jarFile, List<ExpensesBankInfo> expensesBankInfos) throws IOException {
         List<Path> jars = Bootstrap.getPathJarBankInfoFromFile();
         if (jars.contains(jarFile)) { // is added
-            bankBox.getItems().addAll(expensesBankInfo);
+            expensesBankInfos.stream().map(WrapExpensesBankInfo::new)
+                    .filter(elem -> !bankBox.getItems().contains(elem))
+                    .forEach(bankBox.getItems()::add);
         } else { // is remoted
-            bankBox.getItems().removeAll(expensesBankInfo);
+            expensesBankInfos.stream().map(WrapExpensesBankInfo::new)
+                    .filter(elem -> bankBox.getItems().contains(elem))
+                    .forEach(bankBox.getItems()::remove);
+        }
+    }
+
+    /**
+     * This class created that implement logic unique elements in {{@link #bankBox}}
+     *
+     * @see #getSupportedBank()
+     */
+    @AllArgsConstructor
+    public static class WrapExpensesBankInfo {
+
+        private ExpensesBankInfo instanse;
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj instanceof WrapExpensesBankInfo other) {
+                return this.instanse.getClass() == other.instanse.getClass();
+            }
+            return false;
         }
     }
 
@@ -512,6 +549,22 @@ public class HelloController implements Initializable {
     public static File getFromFileChooser(Scene scene, String s, String... extension) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select Some Files");
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(s, extension));
+
+        return fileChooser.showOpenDialog(scene.getWindow());
+    }
+
+    public static File getFromFileChooser(Scene scene, Path initialPath, String s, String... extension) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Some Files");
+        File initialReal = FilesUtil.findDirIsExist(initialPath);
+        if (initialReal != null) {
+            initialPath = initialReal.toPath();
+            if (initialPath.toFile().isFile()) {
+                initialPath = initialPath.getParent();
+            }
+            fileChooser.setInitialDirectory(initialPath.toFile());
+        }
         fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(s, extension));
 
         return fileChooser.showOpenDialog(scene.getWindow());
