@@ -7,6 +7,7 @@ import gorbachev.id.core.ResultParser;
 import gorbachev.id.core.model.ComposeDataBank;
 import gorbachev.id.core.model.ParamParser;
 import gorbachev.id.core.model.SummarizedItemCost;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -14,6 +15,7 @@ import javafx.collections.FXCollections;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.print.PageLayout;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
@@ -32,23 +34,22 @@ import javafx.stage.FileChooser;
 import gorbachev.id.core.DitailStatment;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.time.Month;
-import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -77,26 +78,52 @@ public class HelloController implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         fileBankStatement = new SimpleObjectProperty<>();
 
-        LocalDate from = LocalDate.parse("01.01.2024", DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT));
-        LocalDate to = LocalDate.parse("01.02.2025", DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT));
-        dateFrom.setValue(from);
-        dateTo.setValue(to);
-
-        fileBankStatement.addListener(new ChangeListener<File>() {
-            @Override
-            public void changed(ObservableValue<? extends File> observableValue, File file, File t1) {
-                // обнулить все
-                resultParser = null;
+        dateFrom.setValue(Bootstrap.getDateFrom());
+        dateFrom.setEditable(false);
+        dateFrom.valueProperty().addListener((observableValue, localDate, newV) -> {
+            if (newV != null) {
+                Bootstrap.setDateFrom(newV);
             }
         });
+        dateTo.setValue(Bootstrap.getDateTo());
+        dateTo.setEditable(false);
+        dateTo.valueProperty().addListener((observableValue, localDate, newV) -> {
+            if (newV != null) {
+                Bootstrap.setDateTo(newV);
+            }
+        });
+        fileBankStatement.addListener((observableValue, file, t1) -> {
+            // обнулить все
+        });
         btnLoadFile.setOnAction(actionEvent -> {
-            log.debug("click on select file: ");
-            fileBankStatement.set(getFromFileChooser(bankBox.getScene(), "html", "*.html"));
+            try {
+                if (!bankBox.getItems().isEmpty()) {
+                    fileBankStatement.set(getFromFileChooser(bankBox.getScene(), "file", bankBox.getSelectionModel().getSelectedItem().instanse.parser().supportedExtensions()));
+                } else {
+                    showAlert(btnLoadFile.getScene(), AlertType.MESSAGE, "Вы должны выбрать банк для того чтобы" +
+                                                                         "прочитать загружаемый файл");
+                }
+            }catch (RuntimeException e) {
+                showAlert(btnLoadFile.getScene(), AlertType.ERROR, e.getMessage());
+            }
         });
 
+        bankBox.getSelectionModel().selectedIndexProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observableValue, Number number, Number t1) {
+                if (t1 != null) {
+                    Bootstrap.setSelectedBankByPosition(t1.intValue());
+                }
+            }
+        });
         bankBox.setItems(FXCollections.observableList(getSupportedBank()));
+        int indexSelectedBank = Bootstrap.getSelectedBankByPosition();
         if (bankBox.getItems().size() > 0) {
-            bankBox.getSelectionModel().select(0);
+            if (indexSelectedBank < 0 || indexSelectedBank >= bankBox.getItems().size()) {
+                bankBox.getSelectionModel().select(0);
+            } else {
+                bankBox.getSelectionModel().select(indexSelectedBank);
+            }
         }
         bankBox.setButtonCell(new ListCell<>() {
             @Override
@@ -211,25 +238,44 @@ public class HelloController implements Initializable {
         });
 
         generate.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
-
-            try {
-                if (bankBox.getSelectionModel().getSelectedItem() != null) {
-                    ParamParser paramParser = new ParamParser(Path.of(Objects.requireNonNull(ClassLoader.getSystemClassLoader().getResource("report (3).html")).toURI()).toFile(),
-                            dateFrom.getValue(), dateTo.getValue(), ditalizationBox.getSelectionModel().getSelectedItem());
-                    if (Objects.isNull(resultParser)) {
-                        resultParser = ManagerExpensesBank.parse(paramParser, bankBox.getSelectionModel().getSelectedItem().instanse.parser());
+            if (fileBankStatement.get() != null) {
+                try {
+                    if (bankBox.getSelectionModel().getSelectedItem() != null) {
+                        ParamParser paramParser = new ParamParser(fileBankStatement.get(),
+                                dateFrom.getValue(), dateTo.getValue(), ditalizationBox.getSelectionModel().getSelectedItem());
+                        if (Objects.isNull(resultParser)) {
+                            resultParser = ManagerExpensesBank.parse(paramParser, bankBox.getSelectionModel().getSelectedItem().instanse.parser());
+                        }
+                        ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
+                        compseDeagram(composeData);
+                        Platform.runLater(()-> {
+                            showAlert(generate.getScene(), AlertType.SUCCESS, "Всё получилось УРА!!!!!!!!!!!!");
+                        });
+                    } else {
+                        System.out.println("не выбран банк");
                     }
-                    ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
-                    compseDeagram(composeData);
-                } else {
-                    System.out.println("не выбран банк");
+                } catch (IOException e) {
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    PrintStream errorPrint = new PrintStream(bos, true, StandardCharsets.UTF_8);
+                    e.printStackTrace(errorPrint);
+                    e.printStackTrace();
+                    showAlert(generate.getScene(), AlertType.ERROR, bos.toString(StandardCharsets.UTF_8));
                 }
-            } catch (IOException | URISyntaxException e) {
-                throw new RuntimeException(e);
+            }else {
+                showAlert(generate.getScene(), AlertType.MESSAGE_2, "Пожалуйста\n" +
+                                                                " загрузите файл 'Выписки' выбранного банка: "+ bankBox.getSelectionModel().getSelectedItem().instanse.getBankName());
             }
-//                log.info("Parser is complied");
         });
-
+        Platform.runLater(()-> {
+            btnLoadFile.getScene().getWindow().setOnCloseRequest(new EventHandler<WindowEvent>() {
+                @SneakyThrows
+                @Override
+                public void handle(WindowEvent windowEvent) {
+                    Bootstrap.getProperties().save();
+                    System.out.println("Properties file is saved");
+                }
+            });
+        });
     }
 
     /**
@@ -547,11 +593,7 @@ public class HelloController implements Initializable {
 
 
     public static File getFromFileChooser(Scene scene, String s, String... extension) {
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Select Some Files");
-        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(s, extension));
-
-        return fileChooser.showOpenDialog(scene.getWindow());
+        return getFromFileChooser(scene, null, s, extension);
     }
 
     public static File getFromFileChooser(Scene scene, Path initialPath, String s, String... extension) {
@@ -568,5 +610,46 @@ public class HelloController implements Initializable {
         fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(s, extension));
 
         return fileChooser.showOpenDialog(scene.getWindow());
+    }
+
+    public void showAlert(Scene root, AlertType type, String text) {
+        BorderPane rootPnl = new BorderPane();
+
+        TextFlow textFlow = new TextFlow();
+        textFlow.getChildren().add(new Text(text));
+
+        ImageView messageIcon = new ImageView(new Image(Objects.requireNonNull(ClassLoader.getSystemResourceAsStream(type.getInnerImage()))));
+        messageIcon.fitHeightProperty().bind(rootPnl.heightProperty());
+        messageIcon.setFitWidth(200);
+
+
+        rootPnl.setCenter(textFlow);
+        rootPnl.setRight(messageIcon);
+        Scene sceneMsg = new Scene(rootPnl, 400, 200);
+        Stage stage = new Stage();
+        stage.setMaxHeight(400);
+        stage.setMaxWidth(600);
+        stage.setTitle("Сообщение");
+        stage.initOwner(root.getWindow());
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.setScene(sceneMsg);
+        stage.showAndWait();
+    }
+
+    enum AlertType {
+        MESSAGE("img/message-img.jpg"),
+        MESSAGE_2("img/message-img2.png"),
+
+        ERROR("img/message-error.jpg"),
+        ERROR_2("img/message-error2.jpg"),
+
+        SUCCESS("img/message-success.jpg");
+
+        @Getter
+        private String innerImage;
+
+        AlertType(String innerImage) {
+            this.innerImage = innerImage;
+        }
     }
 }

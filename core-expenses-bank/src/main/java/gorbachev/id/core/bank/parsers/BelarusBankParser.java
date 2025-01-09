@@ -14,4 +14,9 @@ public class BelarusBankParser implements BankParser {
 
         return null;
     }
+
+    @Override
+    public String[] supportedExtensions() {
+        return new String[0];
+    }
 }

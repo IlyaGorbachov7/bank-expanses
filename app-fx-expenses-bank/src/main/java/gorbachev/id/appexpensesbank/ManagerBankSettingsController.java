@@ -6,17 +6,9 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.Initializable;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +16,6 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.ResourceBundle;
 
 public class ManagerBankSettingsController implements Initializable {
@@ -69,21 +60,21 @@ public class ManagerBankSettingsController implements Initializable {
                                 }
                                 rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
                             } catch (IOException e) {
-                                showAlert(jarListView.getScene(), e.getMessage());
-                                if(!(e instanceof NotAccessToFileException)) { // if exception don't connected with saving to file. This necessary that don't permit repeated saving same item to file
+                                rootController.showAlert(jarListView.getScene(), HelloController.AlertType.ERROR_2, e.getMessage());
+                                if (!(e instanceof NotAccessToFileException)) { // if exception don't connected with saving to file. This necessary that don't permit repeated saving same item to file
                                     jarListView.getItems().remove(jarFile);
                                 }
                                 break;
                             }
                         }
                     } else if (change.wasRemoved()) {
-                        for (Path jarFile : change.getAddedSubList()) {
+                        for (Path jarFile : change.getRemoved()) {
                             try {
                                 Bootstrap.removePathToJarBankInfo(jarFile);
                                 List<ExpensesBankInfo> listExpensesBankInfo = Bootstrap.extractExpensesBankInfoFrom(jarFile);
                                 rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
                             } catch (IOException e) {
-                                showAlert(jarListView.getScene(), e.getMessage());
+                                rootController.showAlert(jarListView.getScene(),HelloController.AlertType.ERROR_2, e.getMessage());
                                 if (!(e instanceof NotAccessToFileException)) { // if exception don't connected with saving to file. This necessary that don't permit repeated saving same item to file
                                     jarListView.getItems().add(jarFile); // then you have rollback removed item
                                 }
@@ -116,26 +107,4 @@ public class ManagerBankSettingsController implements Initializable {
 
     }
 
-    public void showAlert(Scene root, String text) {
-        BorderPane rootPnl = new BorderPane();
-
-        TextFlow textFlow = new TextFlow();
-        textFlow.getChildren().add(new Text(text));
-
-        ImageView messageIcon = new ImageView(new Image(Objects.requireNonNull(ClassLoader.getSystemResourceAsStream("img/message-icon.jpg"))));
-        messageIcon.setFitHeight(70);
-        messageIcon.setFitHeight(70);
-
-
-        rootPnl.setCenter(textFlow);
-        rootPnl.setLeft(messageIcon);
-        Scene sceneMsg = new Scene(rootPnl, 400, 200);
-        Stage stage = new Stage();
-
-        stage.setTitle("Сообщение");
-        stage.initOwner(root.getWindow());
-        stage.initModality(Modality.WINDOW_MODAL);
-        stage.setScene(sceneMsg);
-        stage.showAndWait();
-    }
 }

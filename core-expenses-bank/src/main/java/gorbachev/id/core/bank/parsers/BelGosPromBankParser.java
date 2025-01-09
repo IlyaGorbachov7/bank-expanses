@@ -34,6 +34,11 @@ public class BelGosPromBankParser implements BankParser {
         return result;
     }
 
+    @Override
+    public String[] supportedExtensions() {
+        return new String[] {"*.html"};
+    }
+
     private void defineExpenses(Document doc, ResultParser result) throws IOException {
         Element tableExpenses = doc.selectFirst("table.section_3");
         Element tableHeaders = tableExpenses.select("tr").first();

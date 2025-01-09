@@ -1,17 +1,20 @@
 package gorbachev.id.appexpensesbank;
 
+import by.gorbachevid.perse.resbndl.impl.PropertiesManagerBase;
 import by.gorbachevid.perse.util.NotAccessToFileException;
 import gorbachev.id.core.ExpensesBankInfo;
 import gorbachev.id.parent.BootstrapParent;
+import lombok.Getter;
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ServiceLoader;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static gorbachev.id.parent.BootstrapParent.SYS_KEY_PATH_LOGS;
@@ -19,32 +22,45 @@ import static gorbachev.id.parent.BootstrapParent.SYS_KEY_PATH_LOGS;
 
 public class Bootstrap {
 
+    public static final String KEY_DATE_FROM = "dateFrom";
+    public static final String KEY_DATE_TO = "dateTo";
+    public static final String KEY_SELECTED_BANK = "selectedBank";
+
     public static final String fileNameManagerBank = "path-jar-expenses-bank-info.txt";
 
-    public static Path pathApp;
+    public static final String fileNameProperties = "configuration.properties";
 
-    public static Path filePathJarBankInfo;
+    private static Path filePathJarBankInfo;
 
-    public static void configure(String[] args) {
+    @Getter
+    private static PropertiesManagerBase properties;
+
+    public static void configure(String[] args) throws IOException {
         BootstrapParent.configure(args);
-        pathApp = Path.of(System.getProperty(SYS_KEY_PATH_LOGS));
+        Path pathApp = Path.of(System.getProperty(SYS_KEY_PATH_LOGS));
         filePathJarBankInfo = Path.of(pathApp.toAbsolutePath().toString(), fileNameManagerBank);
+        if (!Files.exists(filePathJarBankInfo)) {
+            Files.createFile(filePathJarBankInfo);
+        }
+        Path fileProperties = Path.of(pathApp.toAbsolutePath().toString(), fileNameProperties);
+        if (Files.notExists(fileProperties)) {
+            properties = PropertiesManagerBase.builder().setFileSore(fileProperties.toFile()).build();
+        } else {
+            properties = PropertiesManagerBase.builder().build(fileProperties.toFile());
+        }
     }
 
     public static void addPathToJarBankInfo(Path path) throws NotAccessToFileException {
         try {
-        if (!Files.exists(path)) {
-            throw new IOException("jar file: " + path + " not founded");
-        }
-        if (!Files.exists(filePathJarBankInfo)) {
-            Files.createFile(filePathJarBankInfo);
-        }
-        List<Path> pathsToJar = Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).collect(Collectors.toList());
-        if (!pathsToJar.contains(path)) {
-            pathsToJar.add(path);
-            Files.write(filePathJarBankInfo, pathsToJar.stream().map(Path::toString).toList());
-        }
-        }catch (IOException e) {
+            if (!Files.exists(path)) {
+                throw new IOException("jar file: " + path + " not founded");
+            }
+            List<Path> pathsToJar = Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).collect(Collectors.toList());
+            if (!pathsToJar.contains(path)) {
+                pathsToJar.add(path);
+                Files.write(filePathJarBankInfo, pathsToJar.stream().map(Path::toString).toList());
+            }
+        } catch (IOException e) {
             throw new NotAccessToFileException(e.getMessage(), e, path);
         }
     }
@@ -56,15 +72,17 @@ public class Bootstrap {
                 pathsToJar.remove(path);
                 Files.write(filePathJarBankInfo, pathsToJar.stream().map(Path::toString).toList());
             }
-        }catch (IOException e) {
+        } catch (IOException e) {
             throw new NotAccessToFileException(e.getMessage(), e, path);
         }
     }
 
     public static List<Path> getPathJarBankInfoFromFile() throws IOException {
+
         return Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).toList();
     }
 
+    //:TODO Нужно будет добавить в мою библиотеку. by.gorbachevid.perse.util.FilesUtil
     public static List<ExpensesBankInfo> extractExpensesBankInfoFrom(Path jarFile) throws IOException {
         URLClassLoader foreignLoader = URLClassLoader.newInstance(new URL[]{jarFile.toFile().toURI().toURL()});
         List<ExpensesBankInfo> result = new ArrayList<>();
@@ -74,4 +92,42 @@ public class Bootstrap {
                 .forEach((provider) -> result.add(provider.get()));
         return result;
     }
+
+    public static LocalDate getDateFrom() {
+        String defaultV = "01.01.2024";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT);
+        try {
+            return LocalDate.parse(properties.getValue(KEY_DATE_FROM, defaultV), formatter);
+        } catch (DateTimeParseException e) {
+            return LocalDate.parse(defaultV, formatter);
+        }
+    }
+
+    public static int getSelectedBankByPosition() {
+        return properties.getInt(KEY_SELECTED_BANK, -1);
+    }
+
+    public static void setSelectedBankByPosition(int index) {
+        properties.setValue(KEY_SELECTED_BANK, index);
+    }
+
+    public static void setDateFrom(LocalDate date) {
+        properties.setValue(KEY_DATE_FROM, date.toString());
+    }
+
+    public static LocalDate getDateTo() {
+        String defaultV = "01.01.2025";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.ROOT);
+        try {
+            return LocalDate.parse(properties.getValue(KEY_DATE_TO, defaultV), formatter);
+        } catch (DateTimeParseException e) {
+            return LocalDate.parse(defaultV, formatter);
+        }
+    }
+
+    public static void setDateTo(LocalDate date) {
+        properties.setValue(KEY_DATE_TO, date.toString());
+    }
+
+
 }
