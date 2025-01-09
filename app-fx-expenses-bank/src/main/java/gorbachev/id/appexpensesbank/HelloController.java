@@ -254,7 +254,7 @@ public class HelloController implements Initializable {
                     } else {
                         System.out.println("не выбран банк");
                     }
-                } catch (IOException e) {
+                } catch (RuntimeException | IOException e) {
                     ByteArrayOutputStream bos = new ByteArrayOutputStream();
                     PrintStream errorPrint = new PrintStream(bos, true, StandardCharsets.UTF_8);
                     e.printStackTrace(errorPrint);
