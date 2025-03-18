@@ -13,7 +13,12 @@
     <name>core</name>
     <!-- FIXME change it to the project's website -->
     <url>http://www.example.com</url>
-
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -29,7 +34,6 @@
             <groupId>gorbachev.id</groupId>
             <artifactId>expenses</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <scope>provided</scope>
         </dependency>
 
     </dependencies>

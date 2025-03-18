@@ -8,6 +8,9 @@ import java.nio.file.Path;
 public class BootstrapParent {
     public static final String SYS_KEY_PATH_LOGS = "PATH_LOGS";
 
+    public static void main(String[] args) {
+        System.out.println("fsd");
+    }
     @SneakyThrows
     public static void configure(String[] args) {
         if (System.getProperty(SYS_KEY_PATH_LOGS) == null) {
