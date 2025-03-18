@@ -1,11 +1,13 @@
 package gorbachev.id.appexpensesbank;
 
 import by.gorbachevid.perse.resbndl.impl.PropertiesManagerBase;
+import by.gorbachevid.perse.util.FilesUtil;
 import by.gorbachevid.perse.util.NotAccessToFileException;
 import gorbachev.id.core.ExpensesBankInfo;
 import gorbachev.id.parent.BootstrapParent;
 import lombok.Getter;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -25,6 +27,7 @@ public class Bootstrap {
     public static final String KEY_DATE_FROM = "dateFrom";
     public static final String KEY_DATE_TO = "dateTo";
     public static final String KEY_SELECTED_BANK = "selectedBank";
+    public static final String KEY_SELECTED_DEF_DIR_FILE = "defDir";
 
     public static final String fileNameManagerBank = "path-jar-expenses-bank-info.txt";
 
@@ -82,8 +85,10 @@ public class Bootstrap {
         return Files.readAllLines(filePathJarBankInfo).stream().map(Path::of).toList();
     }
 
-    //:TODO Нужно будет добавить в мою библиотеку. by.gorbachevid.perse.util.FilesUtil
     public static List<ExpensesBankInfo> extractExpensesBankInfoFrom(Path jarFile) throws IOException {
+        if (!Files.isReadable(jarFile) || FilesUtil.getExtensionWithPoint(jarFile.toString()).isEmpty()) {
+            return Collections.emptyList();
+        }
         URLClassLoader foreignLoader = URLClassLoader.newInstance(new URL[]{jarFile.toFile().toURI().toURL()});
         List<ExpensesBankInfo> result = new ArrayList<>();
         ServiceLoader<ExpensesBankInfo> expensesBankInfos = ServiceLoader.load(ExpensesBankInfo.class, foreignLoader);
@@ -129,5 +134,24 @@ public class Bootstrap {
         properties.setValue(KEY_DATE_TO, date.toString());
     }
 
+    public static File getDefSelectedDir() {
+        String pathStr = properties.getValue(KEY_SELECTED_DEF_DIR_FILE, null);
+        if (pathStr == null) return null;
+        Path path = Path.of(pathStr);
+        File file = FilesUtil.findDirIsExist(path);
+        if (file != null && !file.isDirectory()) {
+            file = file.getParentFile();
+        }
+        return file;
+    }
 
+    public static void setDefSelectedDir(File dir) {
+        dir = FilesUtil.findDirIsExist(dir.toPath());
+        if (dir != null) {
+            if (!dir.isDirectory()) {
+                dir = dir.getParentFile();
+                properties.setValue(KEY_SELECTED_DEF_DIR_FILE, dir.toString());
+            }
+        }
+    }
 }

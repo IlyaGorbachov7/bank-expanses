@@ -90,6 +90,13 @@ public class ManagerBankSettingsController implements Initializable {
             if (file != null) {
                 oldSelectedDir = file.toPath();
                 jarListView.getItems().add(file.toPath());
+                Bootstrap.setDefSelectedDir(oldSelectedDir.toFile());
+                try {
+                    Bootstrap.getProperties().save();
+                } catch (IOException e) {
+                    System.out.println("ERROR : don't saved");
+                }
+
             }
         });
 

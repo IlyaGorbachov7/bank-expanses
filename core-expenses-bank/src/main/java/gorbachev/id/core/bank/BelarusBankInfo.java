@@ -8,7 +8,7 @@ import gorbachev.id.core.bank.parsers.BelarusBankParser;
 import java.io.InputStream;
 import java.util.stream.Stream;
 
-public class BelarusBankInfo implements ExpensesBankInfo {
+public class BelarusBankInfo{ /*implements ExpensesBankInfo {
     @Override
     public String getBankName() {
         return "Беларусь Банк";
@@ -27,5 +27,5 @@ public class BelarusBankInfo implements ExpensesBankInfo {
     @Override
     public BankParser parser() {
         return new BelarusBankParser();
-    }
+    }*/
 }

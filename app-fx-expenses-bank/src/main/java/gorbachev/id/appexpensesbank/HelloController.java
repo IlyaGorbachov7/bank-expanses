@@ -287,10 +287,11 @@ public class HelloController implements Initializable {
      * then method {@link WrapExpensesBankInfo#equals(Object)} will be checking uniqueness
      */
     private List<WrapExpensesBankInfo> getSupportedBank() {
-        // reading from core
         List<ExpensesBankInfo> result = new ArrayList<>();
+
+        /*// reading from core
         ServiceLoader<ExpensesBankInfo> bankInfoServiceLoader = ServiceLoader.load(ExpensesBankInfo.class);
-        bankInfoServiceLoader.forEach(result::add);
+        bankInfoServiceLoader.forEach(result::add);*/
 
         try {
             // reading jar files
