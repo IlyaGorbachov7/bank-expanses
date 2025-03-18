@@ -27,7 +27,7 @@
         </dependency>
         <dependency>
             <groupId>gorbachev.id</groupId>
-            <artifactId>expenses</artifactId>
+            <artifactId>base</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

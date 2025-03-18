@@ -12,6 +12,7 @@
         <module>app-fx-expenses-bank</module>
         <module>core-expenses-bank</module>
         <module>core-expenses-bank-impl</module>
+        <module>base</module>
     </modules>
     <name>expenses</name>
 
