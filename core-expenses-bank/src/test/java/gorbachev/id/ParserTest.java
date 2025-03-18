@@ -6,6 +6,7 @@ import gorbachev.id.core.BankParser;
 import gorbachev.id.core.DitailStatment;
 import gorbachev.id.core.ManagerExpensesBank;
 import gorbachev.id.core.ResultParser;
+import gorbachev.id.core.bank.BelGosPromBankInfo;
 import gorbachev.id.core.bank.parsers.BelGosPromBankParser;
 import gorbachev.id.core.model.ComposeDataBank;
 import gorbachev.id.core.model.ItemRecordCost;

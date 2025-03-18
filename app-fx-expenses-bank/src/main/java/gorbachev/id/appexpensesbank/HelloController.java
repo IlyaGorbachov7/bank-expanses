@@ -66,6 +66,8 @@ public class HelloController implements Initializable {
     public Button generate;
     public Button settings;
 
+    public Label sumExpenses;
+
     private SimpleObjectProperty<File> fileBankStatement;
 
     private ResultParser resultParser;
@@ -76,6 +78,7 @@ public class HelloController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        sumExpenses.setText("Еще не определено");
         fileBankStatement = new SimpleObjectProperty<>();
 
         dateFrom.setValue(Bootstrap.getDateFrom());
@@ -248,6 +251,7 @@ public class HelloController implements Initializable {
                         }
                         ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
                         compseDeagram(composeData);
+                        sumExpenses.setText(String.valueOf(composeData.getSumExpenses()));
                         Platform.runLater(()-> {
                             showAlert(generate.getScene(), AlertType.SUCCESS, "Всё получилось УРА!!!!!!!!!!!!");
                         });

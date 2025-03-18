@@ -21,4 +21,15 @@ public class ComposeDataBank {
 
     private Map.Entry<Integer, SummarizedItemCost> minItem;
 
+    public double getSumExpenses() {
+        var f = gropedList.values().stream().flatMap(
+                map -> map.values().stream().flatMap(
+                        map2 -> map2.values().stream().map(
+                                map3 -> map3.values().stream().mapToDouble(SummarizedItemCost::getSumExpensesCost).sum()
+                        )
+                )
+        );
+        return f.mapToDouble(Double::valueOf).sum();
+    }
+
 }

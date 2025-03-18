@@ -53,6 +53,8 @@
                      <children>
                         <ComboBox fx:id="ditalizationBox" layoutX="546.0" prefHeight="25.0" prefWidth="132.0" promptText="Датлизация" />
                         <Button fx:id="generate" layoutX="522.0" layoutY="37.0" mnemonicParsing="false" text="Формировать диограмму" />
+                        <Label layoutX="14.0" layoutY="17.0" text="Обзая сумма затрат за периуд: " />
+                        <Label fx:id="sumExpenses" layoutX="201.0" layoutY="17.0" text="4234234$" />
                      </children>
                   </AnchorPane>
                </children>
