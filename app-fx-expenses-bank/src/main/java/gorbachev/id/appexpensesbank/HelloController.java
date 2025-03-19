@@ -481,17 +481,39 @@ public class HelloController implements Initializable {
 
     }
 
-    public void updateBankComBoBox(Path jarFile, List<ExpensesBankInfo> expensesBankInfos) throws IOException {
+    public boolean updateBankComBoBox(Path jarFile, List<ExpensesBankInfo> expensesBankInfos) throws IOException {
         List<Path> jars = Bootstrap.getPathJarBankInfoFromFile();
+        int oldCount = bankBox.getItems().size();
         if (jars.contains(jarFile)) { // is added
             expensesBankInfos.stream().map(WrapExpensesBankInfo::new)
                     .filter(elem -> !bankBox.getItems().contains(elem))
                     .forEach(bankBox.getItems()::add);
+            if(!bankBox.getButtonCell().isSelected()) {
+                int indexSelectedBank = Bootstrap.getSelectedBankByPosition();
+                if (!bankBox.getItems().isEmpty()) {
+                    if (indexSelectedBank < 0 || indexSelectedBank >= bankBox.getItems().size()) {
+                        bankBox.getSelectionModel().select(0);
+                    } else {
+                        bankBox.getSelectionModel().select(indexSelectedBank);
+                    }
+                }
+            }
         } else { // is remoted
             expensesBankInfos.stream().map(WrapExpensesBankInfo::new)
                     .filter(elem -> bankBox.getItems().contains(elem))
                     .forEach(bankBox.getItems()::remove);
+            if(!bankBox.getButtonCell().isSelected()) {
+                int indexSelectedBank = Bootstrap.getSelectedBankByPosition();
+                if (!bankBox.getItems().isEmpty()) {
+                    if (indexSelectedBank < 0 || indexSelectedBank >= bankBox.getItems().size()) {
+                        bankBox.getSelectionModel().select(0);
+                    } else {
+                        bankBox.getSelectionModel().select(indexSelectedBank);
+                    }
+                }
+            }
         }
+        return oldCount != bankBox.getItems().size();
     }
 
     /**
@@ -513,7 +535,7 @@ public class HelloController implements Initializable {
         public boolean equals(Object obj) {
             if (this == obj) return true;
             if (obj instanceof WrapExpensesBankInfo other) {
-                return this.instanse.getClass() == other.instanse.getClass();
+                return this.instanse.getClass().getName().equals(other.instanse.getClass().getName());
             }
             return false;
         }

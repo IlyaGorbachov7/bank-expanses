@@ -42,8 +42,8 @@ public class ManagerBankSettingsController implements Initializable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        // gettting instalieted list and add new listener
-        jarListView.getItems().addListener(new ListChangeListener<Path>() {
+        class Handler implements ListChangeListener<Path> {
+
             @Override
             public void onChanged(Change<? extends Path> change) {
                 Platform.runLater(() -> {
@@ -59,7 +59,24 @@ public class ManagerBankSettingsController implements Initializable {
                                             Вам необходимо загрузить jar-файл реализации данного интерфейса.
                                             """, jarFile, ExpensesBankInfo.class));
                                 }
-                                rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
+                                boolean isUpdated = rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
+                                if(!isUpdated) {
+                                    jarListView.getItems().removeListener(Handler.this);
+                                    jarListView.getItems().addListener(new ListChangeListener<Path>() {
+                                        @Override
+                                        public void onChanged(Change<? extends Path> ch) {
+                                            if(ch.wasRemoved()) {
+                                                try {
+                                                    Bootstrap.removePathToJarBankInfo(jarFile);
+                                                } catch (NotAccessToFileException ignored) {
+                                                }
+                                            }
+                                            jarListView.getItems().removeListener(this);
+                                            jarListView.getItems().addListener(Handler.this);
+                                        }
+                                    });
+                                    jarListView.getItems().remove(jarFile);
+                                }
                             } catch (IOException e) {
                                 rootController.showAlert(jarListView.getScene(), HelloController.AlertType.ERROR_2, e.getMessage());
                                 if (!(e instanceof NotAccessToFileException)) { // if exception don't connected with saving to file. This necessary that don't permit repeated saving same item to file
@@ -73,7 +90,24 @@ public class ManagerBankSettingsController implements Initializable {
                             try {
                                 Bootstrap.removePathToJarBankInfo(jarFile);
                                 List<ExpensesBankInfo> listExpensesBankInfo = Bootstrap.extractExpensesBankInfoFrom(jarFile);
-                                rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
+                                boolean isUpdated = rootController.updateBankComBoBox(jarFile, listExpensesBankInfo);
+                                if(!isUpdated) {
+                                    jarListView.getItems().removeListener(Handler.this);
+                                    jarListView.getItems().addListener(new ListChangeListener<Path>() {
+                                        @Override
+                                        public void onChanged(Change<? extends Path> ch) {
+                                            if(!ch.wasAdded()){
+                                                try {
+                                                    Bootstrap.addPathToJarBankInfo(jarFile);
+                                                } catch (NotAccessToFileException ignored) {
+                                                }
+                                            }
+                                            jarListView.getItems().removeListener(this);
+                                            jarListView.getItems().addListener(Handler.this);
+                                        }
+                                    });
+                                    jarListView.getItems().add(jarFile);
+                                }
                             } catch (IOException e) {
                                 rootController.showAlert(jarListView.getScene(),HelloController.AlertType.ERROR_2, e.getMessage());
                                 if (!(e instanceof NotAccessToFileException)) { // if exception don't connected with saving to file. This necessary that don't permit repeated saving same item to file
@@ -85,12 +119,16 @@ public class ManagerBankSettingsController implements Initializable {
                     }
                 });
             }
-        });
+        }
+        jarListView.getItems().addListener(new Handler());
+
         btnAdd.setOnAction(actionEvent -> {
             File file = HelloController.getFromFileChooser(btnAdd.getScene(), oldSelectedDir, "jar", "*.jar");
             if (file != null) {
                 oldSelectedDir = file.toPath();
-                jarListView.getItems().add(file.toPath());
+                if(!jarListView.getItems().contains(file.toPath())) {
+                    jarListView.getItems().add(file.toPath());
+                }
                 Bootstrap.setDefSelectedDir(oldSelectedDir.toFile());
                 try {
                     Bootstrap.getProperties().save();
