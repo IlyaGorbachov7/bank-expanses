@@ -36,6 +36,7 @@ public class ManagerBankSettingsController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+        oldSelectedDir = Bootstrap.getDefSelectedDir();
         try { // installation abservablelist
             jarListView.setItems(FXCollections.observableList(new ArrayList<>(Bootstrap.getPathJarBankInfoFromFile())));
         } catch (IOException e) {

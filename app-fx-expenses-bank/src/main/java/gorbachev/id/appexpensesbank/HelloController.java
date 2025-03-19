@@ -121,7 +121,7 @@ public class HelloController implements Initializable {
         });
         bankBox.setItems(FXCollections.observableList(getSupportedBank()));
         int indexSelectedBank = Bootstrap.getSelectedBankByPosition();
-        if (bankBox.getItems().size() > 0) {
+        if (!bankBox.getItems().isEmpty()) {
             if (indexSelectedBank < 0 || indexSelectedBank >= bankBox.getItems().size()) {
                 bankBox.getSelectionModel().select(0);
             } else {

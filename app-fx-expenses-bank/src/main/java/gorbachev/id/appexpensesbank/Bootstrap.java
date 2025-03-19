@@ -134,7 +134,7 @@ public class Bootstrap {
         properties.setValue(KEY_DATE_TO, date.toString());
     }
 
-    public static File getDefSelectedDir() {
+    public static Path getDefSelectedDir() {
         String pathStr = properties.getValue(KEY_SELECTED_DEF_DIR_FILE, null);
         if (pathStr == null) return null;
         Path path = Path.of(pathStr);
@@ -142,7 +142,10 @@ public class Bootstrap {
         if (file != null && !file.isDirectory()) {
             file = file.getParentFile();
         }
-        return file;
+        if(file != null) {
+            return file.toPath();
+        }
+        return null;
     }
 
     public static void setDefSelectedDir(File dir) {
