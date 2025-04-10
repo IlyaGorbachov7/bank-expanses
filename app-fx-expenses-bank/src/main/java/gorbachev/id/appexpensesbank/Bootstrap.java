@@ -89,13 +89,7 @@ public class Bootstrap {
         if (!Files.isReadable(jarFile) || FilesUtil.getExtensionWithPoint(jarFile.toString()).isEmpty()) {
             return Collections.emptyList();
         }
-        URLClassLoader foreignLoader = URLClassLoader.newInstance(new URL[]{jarFile.toFile().toURI().toURL()});
-        List<ExpensesBankInfo> result = new ArrayList<>();
-        ServiceLoader<ExpensesBankInfo> expensesBankInfos = ServiceLoader.load(ExpensesBankInfo.class, foreignLoader);
-        expensesBankInfos.stream()
-                .filter(provider -> provider.type().getClassLoader() == foreignLoader)
-                .forEach((provider) -> result.add(provider.get()));
-        return result;
+        return FilesUtil.extractClassesFromJar(jarFile, ExpensesBankInfo.class);
     }
 
     public static LocalDate getDateFrom() {
