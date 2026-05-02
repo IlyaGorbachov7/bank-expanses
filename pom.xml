@@ -13,6 +13,8 @@
         <module>core-expenses-bank</module>
         <module>core-expenses-bank-impl</module>
         <module>base</module>
+        <module>belarusbank-expenses</module>
+        <module>belinvestbank-expenses</module>
     </modules>
     <name>expenses</name>
 
