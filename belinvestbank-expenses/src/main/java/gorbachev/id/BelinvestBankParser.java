@@ -106,6 +106,9 @@ public class BelinvestBankParser implements BankParser {
 		/*This pattern matcher with
 		 * 2026-05-0202:13:41 1053 503021 Покупка 4121 MOBIL. PRIL. -YAN-DEXGO>MINSK BY -22.8 BYN 0.0/0 109.27
 		 * */
+		if(str.contains("2026-04-02") && str.contains("OZON MINSK")) {
+//			System.out.println();
+		}
 		Matcher matcher = patternCost.matcher(str);
 		if (matcher.find()) {
 			ItemRecordCost res = new ItemRecordCost();
