@@ -102,7 +102,7 @@ public class BelinvestBankParser implements BankParser {
 	}
 
 	private ItemRecordCost buildCost(String str) {
-		Pattern patternCost = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})\\s*(\\d{2}:\\d{2}:\\d{2})\\s*(\\d{4}-\\d{2}-\\d{2})?\\s*(\\d{4})\\s*(\\d+)\\s*(.+)\\s(\\d+)\\s*(.+)\\s+([-|+]\\d+.?\\d*)\\s*([A-Z]{3})");
+		Pattern patternCost = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})(\\d{2}:\\d{2}:\\d{2})\\s*(\\d{4}-\\d{2}-\\d{2})?\\s*(\\d{4})\\s*(\\d+)\\s+(.+?)\\s+(\\d{4})\\s+((?!.*\\d{4}\\s+).+?)\\s+([-|+]\\d+.?\\d*)\\s*([A-Z]{3})");
 		/*This pattern matcher with
 		 * 2026-05-0202:13:41 1053 503021 Покупка 4121 MOBIL. PRIL. -YAN-DEXGO>MINSK BY -22.8 BYN 0.0/0 109.27
 		 * */
