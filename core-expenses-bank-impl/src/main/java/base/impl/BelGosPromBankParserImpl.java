@@ -49,6 +49,8 @@ public class BelGosPromBankParserImpl implements BankParser {
         int indexTypeOperation = -1;
         int indexAmountCost = -1;
         int indexCurrency = -1;
+        int indexMcc = -1;
+        int indexPlaceOperation = -1;
         int inter = 0;
         for (Element columnHeader : tableHeaders.select("th")) {
             if (columnHeader.text().contains("Дата операции")) {
@@ -59,6 +61,10 @@ public class BelGosPromBankParserImpl implements BankParser {
                 indexAmountCost = inter;
             } else if (columnHeader.text().contains("Валюта счета")) {
                 indexCurrency = inter;
+            } else if(columnHeader.text().contains("Место операции")) {
+                indexPlaceOperation = inter;
+            } else if(columnHeader.text().contains("МСС") || columnHeader.text().contains("mcc")) {
+                indexMcc = inter;
             }
             inter++;
         }
@@ -88,8 +94,10 @@ public class BelGosPromBankParserImpl implements BankParser {
                     String typeOperation = row.getElementsByIndexEquals(indexTypeOperation).text();
                     String amountCost = row.getElementsByIndexEquals(indexAmountCost).text();
                     String currency = row.getElementsByIndexEquals(indexCurrency).text();
+                    String placeOperation = row.getElementsByIndexEquals(indexPlaceOperation).text();
+                    String mcc = row.getElementsByIndexEquals(indexMcc).text();
 
-                    var item = createItemContent(dateOperation, typeOperation, amountCost, currency);
+                    var item = createItemContent(dateOperation, typeOperation, amountCost, currency, placeOperation, mcc);
                     if (item.getOperation() == RecordCostStatement.COST_WRITE_DOWN) {
                         expenses.add(item);
                     }
@@ -154,7 +162,7 @@ public class BelGosPromBankParserImpl implements BankParser {
         }
     }
 
-    private ItemRecordCost createItemContent(String dateOperation, String typeOperation, String amountCost, String currency) throws IOException {
+    private ItemRecordCost createItemContent(String dateOperation, String typeOperation, String amountCost, String currency, String placeOperation, String mcc) throws IOException {
         ItemRecordCost result = new ItemRecordCost();
         // date operation
         try {
@@ -189,6 +197,8 @@ public class BelGosPromBankParserImpl implements BankParser {
             throw new IOException(String.format("Not defined value of amount cost: %s. ParseException", amountCost));
         }
 
+        result.setOperationMcc(mcc);
+        result.setOperationPlace(placeOperation);
 
         return result;
     }
