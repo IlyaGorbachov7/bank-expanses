@@ -15,7 +15,7 @@ public class BelinvestBankInfo implements ExpensesBankInfo {
 
 	@Override
 	public InputStream getBankIcon() {
-		return getClass().getResourceAsStream("belinvestbank.png");
+		return getClass().getClassLoader().getResourceAsStream("belinvestbank.png");
 	}
 
 	@Override

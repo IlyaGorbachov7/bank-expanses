@@ -5,40 +5,43 @@ import gorbachev.id.core.ExpensesBankInfo;
 import gorbachev.id.core.ManagerExpensesBank;
 import gorbachev.id.core.ResultParser;
 import gorbachev.id.core.model.ComposeDataBank;
+import gorbachev.id.core.model.ItemRecordCost;
 import gorbachev.id.core.model.ParamParser;
 import gorbachev.id.core.model.SummarizedItemCost;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
 import javafx.print.PageLayout;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.ComboBoxListCell;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.StackPane;
+import javafx.scene.layout.*;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
-import javafx.stage.FileChooser;
+import javafx.stage.*;
 import gorbachev.id.core.DitailStatment;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 import javafx.util.Callback;
+import javafx.util.Pair;
 import javafx.util.StringConverter;
 import lombok.*;
 
+import java.beans.XMLDecoder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -49,7 +52,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.time.Month;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -337,6 +342,13 @@ public class HelloController implements Initializable {
                         composeChart.getSeries().add(series);
                     }
                 }
+                composeChart.getItems().compute(xD, (keyXD, list) -> {
+                    if(list == null) {
+                        list = new ArrayList<>();
+                    }
+                    list.addAll(summarizedItemCost.getExpensesCostByDetail());
+                    return list;
+                });
                 series.getData().add(new XYChart.Data<>(xD, yD));
             }, null, null, null);
         } else if (composeData.getDetail() == DitailStatment.MONTH) {
@@ -361,7 +373,13 @@ public class HelloController implements Initializable {
                 SummarizedItemCost summarizedItemCost = (SummarizedItemCost) obj;
                 String xD = uniqueCodeToDisplayString(composeData.getDetail(), summarizedItemCost.getUniqueCode());
                 Number yD = summarizedItemCost.getSumExpensesCost();
-
+                composeChart.getItems().compute(xD, (keyXD, list) -> {
+                    if(list == null) {
+                        list = new ArrayList<>();
+                    }
+                    list.addAll(summarizedItemCost.getExpensesCostByDetail());
+                    return list;
+                });
                 XYChart.Series<String, Number> series = composeChart.getSeries().getLast();
                 series.getData().add(new XYChart.Data<>(xD, yD));
             }, null, null);
@@ -391,7 +409,13 @@ public class HelloController implements Initializable {
                 XYChart.Series<String, Number> series = composeChart.getSeries().getLast();
                 String xD = uniqueCodeToDisplayString(composeData.getDetail(), summarizedItemCost.getUniqueCode());
                 Number yD = summarizedItemCost.getSumExpensesCost();
-
+                composeChart.getItems().compute(xD, (keyXD, list) -> {
+                    if(list == null) {
+                        list = new ArrayList<>();
+                    }
+                    list.addAll(summarizedItemCost.getExpensesCostByDetail());
+                    return list;
+                });
                 series.getData().add(new XYChart.Data<>(xD, yD));
             }, null);
         } else if (composeData.getDetail() == DitailStatment.HOURS) {
@@ -423,6 +447,13 @@ public class HelloController implements Initializable {
                         XYChart.Series<String, Number> series = composeChart.getSeries().getLast();
                         String xD = uniqueCodeToDisplayString(composeData.getDetail(), summarizedItemCost.getUniqueCode());
                         Number yD = summarizedItemCost.getSumExpensesCost();
+                        composeChart.getItems().compute(xD, (keyXD, list) -> {
+                            if(list == null) {
+                                list = new ArrayList<>();
+                            }
+                            list.addAll(summarizedItemCost.getExpensesCostByDetail());
+                            return list;
+                        });
                         series.getData().add(new XYChart.Data<>(xD, yD));
                     });
         }
@@ -549,6 +580,7 @@ public class HelloController implements Initializable {
         CategoryAxis xA;
         NumberAxis yA;
         Deque<XYChart.Series<String, Number>> series = new ArrayDeque<>();
+        Map<String, List<ItemRecordCost>> items= new HashMap<>();
 
         Integer yearStateTmp;
         Integer monthStateTmp;
@@ -570,6 +602,18 @@ public class HelloController implements Initializable {
                             if (newNode != null) {
                                 Node point = data.getNode();
                                 Label textValue = new Label(String.valueOf(BigDecimal.valueOf(data.getYValue().doubleValue()).setScale(2, RoundingMode.HALF_EVEN)));
+                                textValue.setOnMouseClicked(new EventHandler<MouseEvent>() {
+                                    @Override
+                                    public void handle(MouseEvent event) {
+                                        if(event.getClickCount() == 2) {
+                                            Popup popup = new Popup();
+                                            popup.setAutoHide(true);
+
+                                            List<ItemRecordCost> itemRecordCosts = items.get(data.getXValue());
+                                            showResizablePopup(event, itemRecordCosts);
+                                        }
+                                    }
+                                });
                                 textValue.setStyle("-fx-font-size: 5; -fx-text-fill: black;");
                                 ((StackPane) point).getChildren().add(textValue);
                             }
@@ -579,6 +623,114 @@ public class HelloController implements Initializable {
             }
             res.getData().addAll(series);
             return res;
+        }
+
+        public void showResizablePopup(MouseEvent event, List<ItemRecordCost> itemRecordCosts) {
+
+            if (itemRecordCosts == null || itemRecordCosts.isEmpty()) {
+//                showEmptyAlert();
+                return;
+            }
+
+            // Создаём Stage вместо Popup
+            Stage stage = new Stage();
+
+            // ВАЖНО: делаем окно изменяемым
+            stage.setResizable(true);
+
+            // Устанавливаем минимальный размер (опционально)
+            stage.setMinWidth(400);
+            stage.setMinHeight(300);
+
+            // Устанавливаем начальный размер
+            stage.setWidth(750);
+            stage.setHeight(450);
+
+            // Делаем модальным относительно родительского окна
+            stage.initModality(Modality.WINDOW_MODAL);
+            stage.initOwner(((Node) event.getSource()).getScene().getWindow());
+
+            // Создаём таблицу
+            TableView<ItemRecordCost> tableView = createTableView(itemRecordCosts);
+
+            // Заголовок с количеством
+            Label headerLabel = new Label("Операции (" + itemRecordCosts.size() + " записей)");
+            headerLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px;");
+            Label headerGeneralExpenses = new Label("Общая сумма затрат: " + itemRecordCosts.stream().mapToDouble(ItemRecordCost::getAmount).sum());
+            headerGeneralExpenses.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px;");
+            // Контейнер
+            HBox containerHBox = new HBox(10);
+            containerHBox.getChildren().addAll(headerLabel, headerGeneralExpenses);
+
+            VBox container = new VBox(5);
+            container.setStyle("-fx-background-color: white;");
+            container.getChildren().addAll(containerHBox, tableView);
+
+            // Таблица должна растягиваться
+            VBox.setVgrow(tableView, Priority.ALWAYS);
+
+            Scene scene = new Scene(container);
+            stage.setScene(scene);
+
+            // Позиционируем рядом с кнопкой
+            Node source = (Node) event.getSource();
+            Bounds bounds = source.localToScreen(source.getBoundsInLocal());
+            stage.setX(bounds.getMinX());
+            stage.setY(bounds.getMaxY());
+
+            stage.show();
+        }
+
+        private TableView<ItemRecordCost> createTableView(List<ItemRecordCost> items) {
+            TableView<ItemRecordCost> tableView = new TableView<>();
+
+            // Колонки (как в предыдущем примере)
+            TableColumn<ItemRecordCost, LocalDateTime> dateColumn = new TableColumn<>("Дата операции");
+            dateColumn.setCellValueFactory(new PropertyValueFactory<>("dateOperation"));
+            dateColumn.setCellFactory(column -> new TableCell<ItemRecordCost, LocalDateTime>() {
+                @Override
+                protected void updateItem(LocalDateTime item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(item.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss")));
+                    }
+                }
+            });
+
+            TableColumn<ItemRecordCost, Number> amountColumn = new TableColumn<>("Сумма");
+            amountColumn.setCellValueFactory(new PropertyValueFactory<>("amount"));
+            amountColumn.setCellFactory(column -> new TableCell<ItemRecordCost, Number>() {
+                @Override
+                protected void updateItem(Number item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("");
+                    } else {
+                        double value = item.doubleValue();
+                        Currency currency = getTableView().getItems().get(getIndex()).getCurrency();
+                        setText(String.format("%.2f %s", value, currency));
+                        setStyle(value < 0 ? "-fx-text-fill: red;" : "-fx-text-fill: green;");
+                    }
+                }
+            });
+
+            TableColumn<ItemRecordCost, String> mccColumn = new TableColumn<>("MCC код");
+            mccColumn.setCellValueFactory(new PropertyValueFactory<>("operationMcc"));
+
+            TableColumn<ItemRecordCost, String> placeColumn = new TableColumn<>("Место операции");
+            placeColumn.setCellValueFactory(new PropertyValueFactory<>("operationPlace"));
+            placeColumn.setPrefWidth(250);
+
+            tableView.getColumns().addAll(dateColumn, amountColumn, mccColumn, placeColumn);
+
+            // Растягиваем последнюю колонку
+            tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+            tableView.getItems().addAll(items);
+            return tableView;
         }
 
         void addListeners(LineChart<String, Number> lineChart) {
@@ -634,7 +786,8 @@ public class HelloController implements Initializable {
             }
             fileChooser.setInitialDirectory(initialPath.toFile());
         }
-        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(s, extension));
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("all", "*"),
+                new FileChooser.ExtensionFilter(s, extension));
 
         return fileChooser.showOpenDialog(scene.getWindow());
     }

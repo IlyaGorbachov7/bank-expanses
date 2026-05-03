@@ -90,6 +90,7 @@ public class BelinvestBankParser implements BankParser {
 			itemsCostStr.removeLast(); // delete junk data
 			itemsCostStr = itemsCostStr.stream().map(costStr -> costStr.replaceAll("[\r|\n]", "")).collect(Collectors.toCollection((Supplier<Deque<String>>) ArrayDeque::new));
 			itemsCost.addAll(itemsCostStr.stream().map(this::buildCost).toList());
+			itemsCost = itemsCost.stream().filter((itemRecordCost -> itemRecordCost.getOperation() == RecordCostStatement.COST_WRITE_DOWN)).collect(Collectors.toList());
 		}
 
 
@@ -97,17 +98,17 @@ public class BelinvestBankParser implements BankParser {
 		result.setTotalExpenses(totalExpenses);
 		result.setTotalSpanDate(totalSpanDate);
 		doc.close();
-		return null;
+		return result;
 	}
 
 	private ItemRecordCost buildCost(String str) {
-		ItemRecordCost res = new ItemRecordCost();
-		Pattern patternCost = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})\\s*(\\d{2}:\\d{2}:\\d{2})\\s*(\\d{4}-\\d{2}-\\d{2})?\\s*(\\d{4})\\s*(\\d+)\\s*(\\D+)\\s(\\d+)\\s*(.+)\\s+([-|+]\\d+.?\\d*)\\s*([A-Z]{3})");
+		Pattern patternCost = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})\\s*(\\d{2}:\\d{2}:\\d{2})\\s*(\\d{4}-\\d{2}-\\d{2})?\\s*(\\d{4})\\s*(\\d+)\\s*(.+)\\s(\\d+)\\s*(.+)\\s+([-|+]\\d+.?\\d*)\\s*([A-Z]{3})");
 		/*This pattern matcher with
 		 * 2026-05-0202:13:41 1053 503021 Покупка 4121 MOBIL. PRIL. -YAN-DEXGO>MINSK BY -22.8 BYN 0.0/0 109.27
 		 * */
 		Matcher matcher = patternCost.matcher(str);
 		if (matcher.find()) {
+			ItemRecordCost res = new ItemRecordCost();
 			String dateTimeOperation = matcher.group(1) + " " + matcher.group(2);
 			res.setDateOperation(LocalDateTime.parse(dateTimeOperation, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
@@ -128,15 +129,52 @@ public class BelinvestBankParser implements BankParser {
 				recordCostStatement = RecordCostStatement.COST_ADDED;
 			}
 			res.setOperation(recordCostStatement);
-			res.setAmount(expensesValue);
+			res.setAmount(Math.abs(expensesValue));
 
 			res.setCurrency(Currency.getInstance(matcher.group(10)));
+			return res;
+		} else {
+			/**
+			 * Этот паттерн
+			 * для таких строк
+			 * 2026-04-0720:53:41 2026-04-07Пополнениесчета черезЕРИП+70.0 BYN 70.0/0BYN BYN
+			 * 2026-04-0210:50:37 2026-04-02 Списание изАБС -0.04 BYN -0.04/0BYN BYN
+			 * 2026-03-2512:36:04 2026-03-25Зачислениезаработнойплаты+1230.0 BYN 1230.0/0BYN BYN
+			 */
+			patternCost = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})\\s*(\\d{2}:\\d{2}:\\d{2})\\s*(\\d{4}-\\d{2}-\\d{2})?\\s*(\\d{4})?\\s*(\\d+)?\\s*(.+)\\s*([-|+]\\d+.?\\d*)\\s*([A-Z]{3})");
+			matcher = patternCost.matcher(str);
+			if (matcher.find()) {
+				ItemRecordCost res = new ItemRecordCost();
+				String dateTimeOperation = matcher.group(1) + " " + matcher.group(2);
+				res.setDateOperation(LocalDateTime.parse(dateTimeOperation, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+				/**
+				 * в данной строке нет у нас operationName и operationMcc
+				 */
+				String operationPlace = matcher.group(6);
+				res.setOperationPlace(operationPlace);
+
+				double expensesValue = Double.parseDouble(matcher.group(7));
+				RecordCostStatement recordCostStatement;
+				if (expensesValue < 0) {
+					recordCostStatement = RecordCostStatement.COST_WRITE_DOWN;
+				} else {
+					recordCostStatement = RecordCostStatement.COST_ADDED;
+				}
+				res.setOperation(recordCostStatement);
+				res.setAmount(Math.abs(expensesValue));
+
+				res.setCurrency(Currency.getInstance(matcher.group(8)));
+				return res;
+			}
 		}
-		return res;
+		System.err.println("НЕ НАШЛО: ");
+		System.err.println(str);
+		System.out.println();
+		return null;
 	}
 
 	@Override
 	public String[] supportedExtensions() {
-		return new String[]{".pdf"};
+		return new String[]{"*.pdf"};
 	}
 }

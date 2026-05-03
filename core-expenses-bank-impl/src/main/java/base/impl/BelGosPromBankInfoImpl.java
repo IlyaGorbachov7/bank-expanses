@@ -15,7 +15,7 @@ public class BelGosPromBankInfoImpl implements ExpensesBankInfo {
 
     @Override
     public InputStream getBankIcon() {
-        return ClassLoader.getSystemResourceAsStream("icons/belgospromjpg30.jpg");
+        return getClass().getClassLoader().getResourceAsStream("icons/belgospromjpg30.jpg");
     }
 
     @Override

@@ -14,6 +14,6 @@ public class BelarusBankParser implements BankParser {
 
 	@Override
 	public String[] supportedExtensions() {
-		return new String[] {".pdf"};
+		return new String[] {"*.pdf"};
 	}
 }
