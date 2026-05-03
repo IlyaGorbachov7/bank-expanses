@@ -77,22 +77,19 @@ public class BelinvestBankParser implements BankParser {
 			);
 		}
 
-		ItemRecordCost item = new ItemRecordCost();
 		for (int page = 1; page <= doc.getNumberOfPages(); page++) {
 			stripper.setStartPage(page);
 			stripper.setEndPage(page);
 			text = stripper.getText(doc);
-			System.out.println(text);
 			if (page == 1) {
 				findText = "Статус";
 				findIndex = text.indexOf(findText);
 				text = text.substring(findIndex + findText.length()).stripLeading();
-				Deque<String> itemsCostStr = new ArrayDeque<>(Arrays.stream(text.split(String.format("(%s)|(%s)", lockedText, appliedText))).toList());
-				itemsCostStr.removeLast(); // delete junk data
-				itemsCostStr = itemsCostStr.stream().map(costStr -> costStr.replaceAll("[\r|\n]", "")).collect(Collectors.toCollection((Supplier<Deque<String>>) ArrayDeque::new));
-				itemsCost.addAll(itemsCostStr.stream().map(this::buildCost).toList());
 			}
-			break;
+			Deque<String> itemsCostStr = new ArrayDeque<>(Arrays.stream(text.split(String.format("(%s)|(%s)", lockedText, appliedText))).toList());
+			itemsCostStr.removeLast(); // delete junk data
+			itemsCostStr = itemsCostStr.stream().map(costStr -> costStr.replaceAll("[\r|\n]", "")).collect(Collectors.toCollection((Supplier<Deque<String>>) ArrayDeque::new));
+			itemsCost.addAll(itemsCostStr.stream().map(this::buildCost).toList());
 		}
 
 
@@ -107,10 +104,10 @@ public class BelinvestBankParser implements BankParser {
 		ItemRecordCost res = new ItemRecordCost();
 		Pattern patternCost = Pattern.compile("(\\d{4}-\\d{2}-\\d{2})\\s*(\\d{2}:\\d{2}:\\d{2})\\s*(\\d{4}-\\d{2}-\\d{2})?\\s*(\\d{4})\\s*(\\d+)\\s*(\\D+)\\s(\\d+)\\s*(.+)\\s+([-|+]\\d+.?\\d*)\\s*([A-Z]{3})");
 		/*This pattern matcher with
-		* 2026-05-0202:13:41 1053 503021 Покупка 4121 MOBIL. PRIL. -YAN-DEXGO>MINSK BY -22.8 BYN 0.0/0 109.27
-		* */
+		 * 2026-05-0202:13:41 1053 503021 Покупка 4121 MOBIL. PRIL. -YAN-DEXGO>MINSK BY -22.8 BYN 0.0/0 109.27
+		 * */
 		Matcher matcher = patternCost.matcher(str);
-		if(matcher.find()) {
+		if (matcher.find()) {
 			String dateTimeOperation = matcher.group(1) + " " + matcher.group(2);
 			res.setDateOperation(LocalDateTime.parse(dateTimeOperation, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
@@ -125,7 +122,7 @@ public class BelinvestBankParser implements BankParser {
 
 			double expensesValue = Double.parseDouble(matcher.group(9));
 			RecordCostStatement recordCostStatement;
-			if(expensesValue < 0) {
+			if (expensesValue < 0) {
 				recordCostStatement = RecordCostStatement.COST_WRITE_DOWN;
 			} else {
 				recordCostStatement = RecordCostStatement.COST_ADDED;
