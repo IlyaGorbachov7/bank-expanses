@@ -17,6 +17,10 @@ public class ItemRecordCost {
     private Currency currency;
 
     private RecordCostStatement operation;
+    private String operationTypeName;
+
+    private String operationMcc;
+    private String operationPlace;
 
     private LocalDateTime dateOperation;
 }
