@@ -248,12 +248,12 @@ public class HelloController implements Initializable {
         generate.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEvent -> {
             if (fileBankStatement.get() != null) {
                 try {
+                    WrapExpensesBankInfo bank = bankBox.getSelectionModel().getSelectedItem();
                     if (bankBox.getSelectionModel().getSelectedItem() != null) {
+
                         ParamParser paramParser = new ParamParser(fileBankStatement.get(),
                                 dateFrom.getValue(), dateTo.getValue(), ditalizationBox.getSelectionModel().getSelectedItem());
-                        if (Objects.isNull(resultParser)) {
-                            resultParser = ManagerExpensesBank.parse(paramParser, bankBox.getSelectionModel().getSelectedItem().instanse.parser());
-                        }
+                        resultParser = ManagerExpensesBank.parse(paramParser, bank.instanse.parser());
                         ComposeDataBank composeData = manager.recompose(paramParser, resultParser);
                         compseDeagram(composeData);
                         sumExpenses.setText(String.valueOf(composeData.getSumExpenses()));
@@ -786,8 +786,8 @@ public class HelloController implements Initializable {
             }
             fileChooser.setInitialDirectory(initialPath.toFile());
         }
-        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("all", "*"),
-                new FileChooser.ExtensionFilter(s, extension));
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter(s, extension),
+                new FileChooser.ExtensionFilter("all", "*"));
 
         return fileChooser.showOpenDialog(scene.getWindow());
     }
